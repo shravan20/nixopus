@@ -14,7 +14,7 @@ export default withMermaid(
     title: "Nixopus Docs",
     description: "documentation",
     head: [['link', { rel: 'icon', href: '/favicon.png' }]],
-    // base: '/',
+    base: process.env.ENV == 'developement' ? '/' : '/nixopus/',
     themeConfig: {
       search: {
         provider: 'local',
