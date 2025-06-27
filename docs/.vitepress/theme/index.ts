@@ -12,6 +12,7 @@ export default {
     enhanceApp({ app, router, siteData }) {
         const openapi = useOpenapi({ spec })
         app.provide('openapi', openapi)
+
         theme.enhanceApp({ app })
     }
 } satisfies Theme
