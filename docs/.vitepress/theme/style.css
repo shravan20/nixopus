@@ -57,4 +57,50 @@
 .OASidebarItem-text {
   font-family: var(--vp-font-family-mono);
   font-size: 13px;
+=======
+/* Center align hero section */
+.VPHero .container {
+  text-align: center;
+}
+
+.VPHero .main {
+  text-align: center;
+}
+
+.VPHero .name,
+.VPHero .text {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.VPHero .text {
+  font-size: 3rem;
+}
+
+.VPHero .tagline {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 600px;
+}
+
+.VPHero .actions {
+  justify-content: center;
+}
+
+/* Ensure the hero content is centered */
+.VPHome .VPHero {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.VPHome .VPHero .container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+
 }
