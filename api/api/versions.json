@@ -3,7 +3,11 @@
     {
       "version": "v1",
       "status": "active",
+<<<<<<< HEAD
       "release_date": "2025-06-28T00:59:10.212737+05:30",
+=======
+      "release_date": "2025-06-26T17:30:26.231624+05:30",
+>>>>>>> 4249422b64a0e22945f50b5e64e1e0471c5ffe4f
       "end_of_life": "0001-01-01T00:00:00Z",
       "changes": [
         "Initial API version"
