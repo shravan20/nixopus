@@ -12,6 +12,9 @@ hero:
     - theme: alt
       text: Installation
       link: /install/index.md
+    - theme: brand
+      text: Support us
+      link: https://github.com/sponsors/raghavyuva
 ---
 
 
