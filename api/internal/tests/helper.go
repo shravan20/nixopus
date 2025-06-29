@@ -73,3 +73,7 @@ func GetContainersURL() string {
 func GetContainerURL(containerID string) string {
 	return baseURL + "/container/" + containerID
 }
+
+func GetContainerLogsURL(containerID string) string {
+	return baseURL + "/container/" + containerID + "/logs"
+}
