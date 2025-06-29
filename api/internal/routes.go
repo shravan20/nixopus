@@ -78,6 +78,8 @@ func (router *Router) Routes() {
 	case "production":
 		if HOST != "" {
 			serverAddr = HOST + ":" + PORT
+		} else {
+			serverAddr = "localhost:" + PORT
 		}
 	default:
 		serverAddr = "localhost:" + PORT
