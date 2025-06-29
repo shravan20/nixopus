@@ -77,3 +77,15 @@ func GetContainerURL(containerID string) string {
 func GetContainerLogsURL(containerID string) string {
 	return baseURL + "/container/" + containerID + "/logs"
 }
+
+func GetDomainURL() string {
+	return baseURL + "/domain"
+}
+
+func GetDomainsURL() string {
+	return baseURL + "/domains"
+}
+
+func GetDomainGenerateURL() string {
+	return baseURL + "/domain/generate"
+}

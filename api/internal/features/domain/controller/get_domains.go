@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-fuego/fuego"
+	"github.com/google/uuid"
 	"github.com/raghavyuva/nixopus-api/internal/features/domain/types"
 	"github.com/raghavyuva/nixopus-api/internal/features/logger"
 	"github.com/raghavyuva/nixopus-api/internal/utils"
@@ -15,9 +16,15 @@ import (
 )
 
 func (c *DomainsController) GetDomains(f fuego.ContextNoBody) (*shared_types.Response, error) {
-	organization_id := f.QueryParam("id")
-
 	w, r := f.Response(), f.Request()
+
+	organization_id := utils.GetOrganizationID(r)
+	if organization_id == uuid.Nil {
+		return nil, fuego.HTTPError{
+			Err:    nil,
+			Status: http.StatusBadRequest,
+		}
+	}
 
 	user := utils.GetUser(w, r)
 
@@ -30,7 +37,7 @@ func (c *DomainsController) GetDomains(f fuego.ContextNoBody) (*shared_types.Res
 
 	c.logger.Log(logger.Info, "fetching domains", fmt.Sprintf("organization_id: %s", organization_id))
 
-	domains, err := c.service.GetDomains(organization_id, user.ID)
+	domains, err := c.service.GetDomains(organization_id.String(), user.ID)
 	if err != nil {
 		c.logger.Log(logger.Error, err.Error(), "")
 		return nil, fuego.HTTPError{
@@ -49,9 +56,15 @@ func (c *DomainsController) GetDomains(f fuego.ContextNoBody) (*shared_types.Res
 func (c *DomainsController) GenerateRandomSubDomain(f fuego.ContextNoBody) (*shared_types.Response, error) {
 	w, r := f.Response(), f.Request()
 
-	organization_id := f.QueryParam("id")
+	organization_id := utils.GetOrganizationID(r)
+	if organization_id == uuid.Nil {
+		return nil, fuego.HTTPError{
+			Err:    nil,
+			Status: http.StatusBadRequest,
+		}
+	}
 
-	domains, err := c.service.GetDomains(organization_id, utils.GetUser(w, r).ID)
+	domains, err := c.service.GetDomains(organization_id.String(), utils.GetUser(w, r).ID)
 	if err != nil {
 		c.logger.Log(logger.Error, err.Error(), "")
 		return nil, fuego.HTTPError{

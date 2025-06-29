@@ -18,10 +18,12 @@ func TestGetContainerLogs(t *testing.T) {
 
 	orgID := org.ID.String()
 
-	// First, get a container ID from the list
+	// Note: First, get a container ID from the list; sue the same for test validation (PSQL test db container)
+	// Test casess are designed to work with an existing container.
+	// TODO: @shravan20 - Run a script on pre running E2E tests to create a containers & add as DB seeding
 	var containerID string
 	Test(t,
-		Description("Get container ID for logs tests"),
+		Description("Get container id for logs tests"),
 		Get(tests.GetContainersURL()),
 		Send().Headers("Authorization").Add("Bearer "+user.AccessToken),
 		Send().Headers("X-Organization-Id").Add(orgID),
@@ -102,7 +104,6 @@ func TestGetContainerLogs(t *testing.T) {
 				testSteps = append(testSteps, Send().Headers("X-Organization-Id").Add(tc.organizationID))
 			}
 
-			// Add JSON body with container logs request
 			requestBody := map[string]interface{}{
 				"id":     tc.containerID,
 				"follow": false,
@@ -136,7 +137,6 @@ func TestGetContainerLogsWithFilters(t *testing.T) {
 
 	orgID := org.ID.String()
 
-	// First, get a container ID from the list
 	var containerID string
 	Test(t,
 		Description("Get container ID for logs filter tests"),
@@ -349,7 +349,6 @@ func TestGetContainerLogsPermissions(t *testing.T) {
 
 	orgID := org.ID.String()
 
-	// Get a container ID
 	var containerID string
 	Test(t,
 		Description("Get container ID for permission tests"),
