@@ -65,3 +65,11 @@ func GetUserDetailsURL() string {
 func GetIsAdminRegisteredURL() string {
 	return baseURL + "/auth/is-admin-registered"
 }
+
+func GetContainersURL() string {
+	return baseURL + "/container"
+}
+
+func GetContainerURL(containerID string) string {
+	return baseURL + "/container/" + containerID
+}
