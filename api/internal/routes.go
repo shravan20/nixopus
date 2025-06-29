@@ -74,14 +74,9 @@ func (router *Router) Routes() {
 	HOST := os.Getenv("HOST")
 	var serverAddr string = ""
 
-	switch ENV {
-	case "production":
-		if HOST != "" {
-			serverAddr = HOST + ":" + PORT
-		} else {
-			serverAddr = "localhost:" + PORT
-		}
-	default:
+	if ENV == "production" && HOST != "" {
+		serverAddr = HOST + ":" + PORT
+	} else {
 		serverAddr = "localhost:" + PORT
 	}
 
