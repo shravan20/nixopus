@@ -307,7 +307,7 @@ func TestGetContainerLogsErrorHandling(t *testing.T) {
 		requestBody := map[string]interface{}{
 			"id":     "some-container-id",
 			"follow": false,
-			"tail":   "invalid-number", // This should cause an error since tail expects int
+			"tail":   "invalid-number", // should throw an error since tail expects int
 			"stdout": true,
 			"stderr": true,
 		}
