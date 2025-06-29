@@ -20,7 +20,7 @@ func TestGetContainerLogs(t *testing.T) {
 
 	// Note: First, get a container ID from the list; sue the same for test validation (PSQL test db container)
 	// Test casess are designed to work with an existing container.
-	// TODO: @shravan20 - Run a script on pre running E2E tests to create a containers & add as DB seeding
+	// TODO: Run a script on pre running E2E tests to create a containers & add as DB seeding
 	var containerID string
 	Test(t,
 		Description("Get container id for logs tests"),
