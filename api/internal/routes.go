@@ -68,25 +68,18 @@ func (router *Router) Routes() {
 	if PORT == "" {
 		PORT = "8080"
 	}
-	
+
 	// Build server address based on environment
 	ENV := os.Getenv("ENV")
 	HOST := os.Getenv("HOST")
-	var serverAddr string
-	
+	var serverAddr string = ""
+
 	switch ENV {
 	case "production":
-		// In production, use the HOST env var or empty for all interfaces
 		if HOST != "" {
 			serverAddr = HOST + ":" + PORT
-		} else {
-			serverAddr = ":" + PORT
 		}
-	case "development":
-		// In development, use localhost
-		serverAddr = "localhost:" + PORT
 	default:
-		// Default to localhost for local development
 		serverAddr = "localhost:" + PORT
 	}
 
