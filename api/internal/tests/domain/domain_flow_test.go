@@ -734,7 +734,7 @@ func TestDomainPermissions(t *testing.T) {
 	t.Run("Domain permissions and organization isolation", func(t *testing.T) {
 		var domainID string
 
-		// Create a domain in the user's organization
+		// Create a domain in the user' organization
 		createRequest := map[string]interface{}{
 			"name":            "permissions-test.nixopus.dev",
 			"organization_id": orgID,
