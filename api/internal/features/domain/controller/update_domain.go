@@ -42,17 +42,17 @@ func (c *DomainsController) UpdateDomain(f fuego.ContextWithBody[types.UpdateDom
 	if err != nil {
 		c.logger.Log(logger.Error, err.Error(), "")
 
+		if isInvalidDomainError(err) {
+			return nil, fuego.HTTPError{
+				Err:    err,
+				Status: http.StatusBadRequest,
+			}
+		}
+
 		if err == types.ErrDomainNotFound {
 			return nil, fuego.HTTPError{
 				Err:    err,
 				Status: http.StatusNotFound,
-			}
-		}
-
-		if err == types.ErrInvalidDomainID || err == types.ErrMissingDomainID || err == types.ErrDomainNameInvalid || err == types.ErrDomainNameTooLong || err == types.ErrDomainNameTooShort || err == types.ErrMissingDomainName {
-			return nil, fuego.HTTPError{
-				Err:    err,
-				Status: http.StatusBadRequest,
 			}
 		}
 

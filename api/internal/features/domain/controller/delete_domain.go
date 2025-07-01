@@ -31,18 +31,18 @@ func (c *DomainsController) DeleteDomain(f fuego.ContextWithBody[types.DeleteDom
 	err = c.service.DeleteDomain(domainRequest.ID)
 	if err != nil {
 		c.logger.Log(logger.Error, err.Error(), "")
-		// TODO: Util to handle err-status mapping
+
+		if isInvalidDomainError(err) {
+			return nil, fuego.HTTPError{
+				Err:    err,
+				Status: http.StatusBadRequest,
+			}
+		}
+
 		if err == types.ErrDomainNotFound {
 			return nil, fuego.HTTPError{
 				Err:    err,
 				Status: http.StatusNotFound,
-			}
-		}
-
-		if err == types.ErrInvalidDomainID || err == types.ErrMissingDomainID {
-			return nil, fuego.HTTPError{
-				Err:    err,
-				Status: http.StatusBadRequest,
 			}
 		}
 

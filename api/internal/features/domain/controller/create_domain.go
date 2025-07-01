@@ -43,17 +43,17 @@ func (c *DomainsController) CreateDomain(f fuego.ContextWithBody[types.CreateDom
 	if err != nil {
 		c.logger.Log(logger.Error, err.Error(), "")
 
+		if isInvalidDomainError(err) {
+			return nil, fuego.HTTPError{
+				Err:    err,
+				Status: http.StatusBadRequest,
+			}
+		}
+
 		if err == types.ErrDomainAlreadyExists {
 			return nil, fuego.HTTPError{
 				Err:    err,
 				Status: http.StatusConflict,
-			}
-		}
-
-		if err == types.ErrDomainNameInvalid || err == types.ErrDomainNameTooLong || err == types.ErrDomainNameTooShort || err == types.ErrMissingDomainName {
-			return nil, fuego.HTTPError{
-				Err:    err,
-				Status: http.StatusBadRequest,
 			}
 		}
 
