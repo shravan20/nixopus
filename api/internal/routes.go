@@ -72,11 +72,9 @@ func (router *Router) Routes() {
 	// Build server address based on environment
 	ENV := os.Getenv("ENV")
 	HOST := os.Getenv("HOST")
-	var serverAddr string = ""
+	var serverAddr string = ":" + PORT
 
-	if ENV == "production" && HOST != "" {
-		serverAddr = HOST + ":" + PORT
-	} else {
+	if ENV == "development" {
 		serverAddr = "localhost:" + PORT
 	}
 
@@ -252,6 +250,8 @@ func (router *Router) Routes() {
 	})
 	router.ContainerRoutes(containerGroup, containerController)
 
+	log.Printf("Server starting on port %s", PORT)
+	log.Printf("Swagger UI available at: http://localhost:%s/swagger/", PORT)
 	server.Run()
 }
 
