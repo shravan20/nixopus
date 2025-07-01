@@ -65,13 +65,8 @@ func (router *Router) Routes() {
 		log.Fatal("Error loading .env file")
 	}
 	PORT := os.Getenv("PORT")
-	if PORT == "" {
-		PORT = "8080"
-	}
 
-	// Build server address based on environment
 	ENV := os.Getenv("ENV")
-	HOST := os.Getenv("HOST")
 	var serverAddr string = ":" + PORT
 
 	if ENV == "development" {
