@@ -66,13 +66,6 @@ func (router *Router) Routes() {
 	}
 	PORT := os.Getenv("PORT")
 
-	ENV := os.Getenv("ENV")
-	var serverAddr string = ":" + PORT
-
-	if ENV == "development" {
-		serverAddr = "localhost:" + PORT
-	}
-
 	docs := api.NewVersionDocumentation()
 	if err := docs.Save("api/versions.json"); err != nil {
 		log.Printf("Warning: Failed to save version documentation: %v", err)
@@ -97,7 +90,7 @@ func (router *Router) Routes() {
 					WithDescription("Enter your JWT token in the format: Bearer <token>"),
 			},
 		}),
-		fuego.WithAddr(serverAddr),
+		fuego.WithAddr(":"+PORT),
 	)
 
 	apiV1 := api.NewVersion(api.CurrentVersion)
