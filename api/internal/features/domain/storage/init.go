@@ -60,7 +60,7 @@ func (s *DomainStorage) CreateDomain(domain *shared_types.Domain) error {
 
 func (s *DomainStorage) GetDomain(id string) (*shared_types.Domain, error) {
 	var domain shared_types.Domain
-	err := s.getDB().NewSelect().Model(&domain).Where("id = ? AND deleted_at IS NULL", id).Scan(s.Ctx)
+	err := s.getDB().NewSelect().Model(&domain).Where("id = ?", id).Scan(s.Ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, types.ErrDomainNotFound
@@ -72,13 +72,13 @@ func (s *DomainStorage) GetDomain(id string) (*shared_types.Domain, error) {
 
 func (s *DomainStorage) UpdateDomain(ID string, Name string) error {
 	var domain shared_types.Domain
-	err := s.getDB().NewSelect().Model(&domain).Where("id = ? AND deleted_at IS NULL", ID).Scan(s.Ctx)
+	err := s.getDB().NewSelect().Model(&domain).Where("id = ?", ID).Scan(s.Ctx)
 	if err != nil {
 		return err
 	}
 	domain.Name = Name
 	domain.UpdatedAt = time.Now()
-	_, err = s.getDB().NewUpdate().Model(&domain).Where("id = ? AND deleted_at IS NULL", ID).Exec(s.Ctx)
+	_, err = s.getDB().NewUpdate().Model(&domain).Where("id = ?", ID).Exec(s.Ctx)
 	if err != nil {
 		return err
 	}
@@ -86,32 +86,17 @@ func (s *DomainStorage) UpdateDomain(ID string, Name string) error {
 }
 
 func (s *DomainStorage) DeleteDomain(domain *shared_types.Domain) error {
-	now := time.Now()
-	result, err := s.getDB().NewUpdate().Model(domain).
-		Set("deleted_at = ?", now).
-		Set("updated_at = ?", now).
-		Where("id = ? AND deleted_at IS NULL", domain.ID).
-		Exec(s.Ctx)
+	_, err := s.getDB().NewDelete().Model(domain).Where("id = ?", domain.ID).Exec(s.Ctx)
 	if err != nil {
 		return err
 	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if rowsAffected == 0 {
-		return types.ErrDomainNotFound
-	}
-
 	return nil
 }
 
 func (s *DomainStorage) GetDomains(OrganizationID string, UserID uuid.UUID) ([]shared_types.Domain, error) {
 	var domains []shared_types.Domain
 	err := s.getDB().NewSelect().Model(&domains).
-		Where("organization_id = ? AND deleted_at IS NULL", OrganizationID).
+		Where("organization_id = ?", OrganizationID).
 		Scan(s.Ctx)
 	if err != nil {
 		return nil, err
@@ -122,7 +107,7 @@ func (s *DomainStorage) GetDomains(OrganizationID string, UserID uuid.UUID) ([]s
 func (s *DomainStorage) GetDomainByName(name string, organizationID uuid.UUID) (*shared_types.Domain, error) {
 	var domain shared_types.Domain
 	err := s.getDB().NewSelect().Model(&domain).
-		Where("name = ? AND organization_id = ? AND deleted_at IS NULL", name, organizationID).
+		Where("name = ? AND organization_id = ?", name, organizationID).
 		Scan(s.Ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -135,7 +120,7 @@ func (s *DomainStorage) GetDomainByName(name string, organizationID uuid.UUID) (
 
 func (s *DomainStorage) IsDomainExists(ID string) (bool, error) {
 	var domain shared_types.Domain
-	err := s.getDB().NewSelect().Model(&domain).Where("id = ? AND deleted_at IS NULL", ID).Scan(s.Ctx)
+	err := s.getDB().NewSelect().Model(&domain).Where("id = ?", ID).Scan(s.Ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return false, nil
@@ -147,7 +132,7 @@ func (s *DomainStorage) IsDomainExists(ID string) (bool, error) {
 
 func (s *DomainStorage) GetDomainOwnerByID(ID string) (string, error) {
 	var domain shared_types.Domain
-	err := s.getDB().NewSelect().Model(&domain).Where("id = ? AND deleted_at IS NULL", ID).Scan(s.Ctx)
+	err := s.getDB().NewSelect().Model(&domain).Where("id = ?", ID).Scan(s.Ctx)
 	if err != nil {
 		return "", err
 	}

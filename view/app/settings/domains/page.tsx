@@ -22,7 +22,7 @@ const Page = () => {
     data: domains,
     isLoading,
     error
-  } = useGetAllDomainsQuery();
+  } = useGetAllDomainsQuery({ organizationId: activeOrg?.id || '' }, { skip: !activeOrg?.id });
   const [addDomainDialogOpen, setAddDomainDialogOpen] = React.useState(false);
   const { isFeatureEnabled, isLoading: isFeatureFlagsLoading } = useFeatureFlags();
 
