@@ -65,27 +65,3 @@ func GetUserDetailsURL() string {
 func GetIsAdminRegisteredURL() string {
 	return baseURL + "/auth/is-admin-registered"
 }
-
-func GetContainersURL() string {
-	return baseURL + "/container"
-}
-
-func GetContainerURL(containerID string) string {
-	return baseURL + "/container/" + containerID
-}
-
-func GetContainerLogsURL(containerID string) string {
-	return baseURL + "/container/" + containerID + "/logs"
-}
-
-func GetDomainURL() string {
-	return baseURL + "/domain"
-}
-
-func GetDomainsURL() string {
-	return baseURL + "/domains"
-}
-
-func GetDomainGenerateURL() string {
-	return baseURL + "/domain/generate"
-}
