@@ -42,21 +42,6 @@ func (c *DomainsController) CreateDomain(f fuego.ContextWithBody[types.CreateDom
 
 	if err != nil {
 		c.logger.Log(logger.Error, err.Error(), "")
-
-		if isInvalidDomainError(err) {
-			return nil, fuego.HTTPError{
-				Err:    err,
-				Status: http.StatusBadRequest,
-			}
-		}
-
-		if err == types.ErrDomainAlreadyExists {
-			return nil, fuego.HTTPError{
-				Err:    err,
-				Status: http.StatusConflict,
-			}
-		}
-
 		return nil, fuego.HTTPError{
 			Err:    err,
 			Status: http.StatusInternalServerError,
