@@ -89,3 +89,11 @@ func GetDomainsURL() string {
 func GetDomainGenerateURL() string {
 	return baseURL + "/domain/generate"
 }
+
+func GetFeatureFlagsURL() string {
+	return baseURL + "/feature-flags"
+}
+
+func GetFeatureFlagCheckURL() string {
+	return baseURL + "/feature-flags/check"
+}
