@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PasswordInput } from '@/components/ui/password-input';
 import nixopusLogo from '@/public/nixopus_logo_transparent.png';
 import { useTranslation } from '@/hooks/use-translation';
 import Link from 'next/link';
@@ -61,9 +62,8 @@ export function LoginForm({ ...props }: LoginFormProps) {
                       </a>
                     </div> */}
                     <Label htmlFor="password">{t('auth.password')}</Label>
-                    <Input
+                    <PasswordInput
                       id="password"
-                      type="password"
                       required
                       value={props.password}
                       onChange={props.handlePasswordChange}
