@@ -9,6 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Switch } from '@/components/ui/switch';
 import {
   Form,
@@ -231,8 +232,7 @@ const ChannelTab: React.FC<ChannelTabProps> = ({
                         {t('settings.notifications.channels.email.fields.smtp_password.label')}
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          type="password"
+                        <PasswordInput
                           {...field}
                           placeholder={t(
                             'settings.notifications.channels.email.fields.smtp_password.placeholder'

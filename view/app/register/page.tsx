@@ -5,6 +5,7 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PasswordInput } from '@/components/ui/password-input';
 import { cn } from '@/lib/utils';
 import nixopusLogo from '@/public/nixopus_logo_transparent.png';
 import useRegister from './hooks/use-register';
@@ -67,7 +68,7 @@ export default function RegisterPage() {
                     </div>
                     <div className="grid gap-3">
                       <Label htmlFor="password">{t('auth.password')}</Label>
-                      <Input id="password" type="password" {...form.register('password')} />
+                      <PasswordInput id="password" {...form.register('password')} />
                       {form.formState.errors.password && (
                         <p className="text-sm text-destructive">
                           {form.formState.errors.password.message}
@@ -76,9 +77,8 @@ export default function RegisterPage() {
                     </div>
                     <div className="grid gap-3">
                       <Label htmlFor="confirmPassword">{t('auth.register.confirmPassword')}</Label>
-                      <Input
+                      <PasswordInput
                         id="confirmPassword"
-                        type="password"
                         {...form.register('confirmPassword')}
                       />
                       {form.formState.errors.confirmPassword && (

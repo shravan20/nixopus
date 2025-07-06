@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { PasswordInput } from '@/components/ui/password-input';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -104,8 +105,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
                 <FormItem>
                   <FormLabel>{t('auth.resetPassword.newPassword')}</FormLabel>
                   <FormControl>
-                    <Input
-                      type="password"
+                    <PasswordInput
                       placeholder={t('auth.resetPassword.newPassword')}
                       {...field}
                     />
@@ -121,8 +121,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
                 <FormItem>
                   <FormLabel>{t('auth.resetPassword.confirmPassword')}</FormLabel>
                   <FormControl>
-                    <Input
-                      type="password"
+                    <PasswordInput
                       placeholder={t('auth.resetPassword.confirmPassword')}
                       {...field}
                     />

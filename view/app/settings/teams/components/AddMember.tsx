@@ -2,6 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import {
   Dialog,
   DialogContent,
@@ -120,9 +121,8 @@ function AddMember({
             <Label htmlFor="password" className="text-right">
               {t('settings.teams.addMember.dialog.fields.password.label')}
             </Label>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               value={newUser.password}
               onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
               className="col-span-3"
