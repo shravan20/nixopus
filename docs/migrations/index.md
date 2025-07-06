@@ -86,7 +86,7 @@ CREATE TABLE migrations (
 );
 ```
 
-![](../../assets/db-schema.png)
+![db-schema](https://raw.githubusercontent.com/shravan20/nixopus/refs/heads/master/assets/db-schema.png)
 
 ### Transaction Safety
 
