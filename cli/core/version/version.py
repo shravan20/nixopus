@@ -10,7 +10,7 @@ def display_version():
     cli_version = version('nixopus')
     
     version_text = Text()
-    version_text.append("NixOpus CLI", style="bold blue")
+    version_text.append("Nixopus CLI", style="bold blue")
     version_text.append(f" v{cli_version}", style="green")
     
     panel = Panel(

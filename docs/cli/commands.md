@@ -1,15 +1,16 @@
 # CLI Commands Reference
 
-This guide provides detailed documentation for all available NixOpus CLI commands.
+This guide provides detailed documentation for all available Nixopus CLI commands.
 
 ## Command Overview
 
-The NixOpus CLI provides essential commands for managing your NixOpus deployments:
+The Nixopus CLI provides essential commands for managing your Nixopus deployments:
 
 | Command | Description | Usage |
 |---------|-------------|-------|
 | `version` | Display CLI version | `nixopus version` |
 | `test` | Run CLI tests | `nixopus test [target]` |
+| `preflight` | Run system readiness checks | `nixopus preflight check` |
 
 ## Core Commands
 
@@ -17,7 +18,7 @@ Core commands provide essential functionality for the CLI.
 
 ### `version`
 
-Display the current version of the NixOpus CLI.
+Display the current version of the Nixopus CLI.
 
 **Usage:**
 ```bash
@@ -32,14 +33,36 @@ nixopus -v
 **Example Output:**
 ```
 ┌───────────────── Version Info ─────────────────┐
-│ NixOpus CLI v0.1.0                            │
+│ Nixopus CLI v0.1.0                            │
 └─────────────────────────────────────────────────┘
 ```
 
 **Aliases:** `-v`, `--version`
 
 **Description:**
-The version command displays the current version of the NixOpus CLI using rich formatting. The version information is retrieved from the package metadata and displayed in a styled panel.
+The version command displays the current version of the Nixopus CLI using rich formatting. The version information is retrieved from the package metadata and displayed in a styled panel.
+
+---
+
+### `preflight`
+
+Run system readiness checks to ensure the environment is properly configured for Nixopus self-hosting.
+
+**Usage:**
+```bash
+nixopus preflight check
+```
+
+**Subcommands:**
+- `check`: Run all preflight checks
+
+**Description:**
+The preflight command performs system checks to ensure your environment is ready for Nixopus self-hosting. This includes verifying system requirements, dependencies, and configuration.
+
+**Example Output:**
+```
+Running preflight checks...
+```
 
 ---
 
@@ -96,6 +119,7 @@ nixopus --help
 # Command-specific help
 nixopus version --help
 nixopus test --help
+nixopus preflight --help
 ```
 
 ## Command Structure

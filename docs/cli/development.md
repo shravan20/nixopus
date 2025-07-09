@@ -9,15 +9,15 @@ cli/
 ├── main.py              # Main CLI entry point
 ├── pyproject.toml       # Project configuration
 ├── commands/            # Command implementations
-│   ├── version.py      # Version command
-│   └── test.py         # Test command
-├── core/               # Core functionality
-│   ├── config.py       # Configuration utilities
-│   └── version.py      # Version display logic
-├── utils/              # Utility functions
-└── tests/              # Test files
-    ├── test_commands_version.py
-    └── version.py
+│   ├── version/         # Version command module
+│   ├── test/            # Test command module
+│   └── preflight/       # Preflight command module
+├── core/                # Core functionality
+│   ├── config.py        # Configuration utilities
+│   ├── version/         # Version display logic
+│   └── test/            # Test functionality
+├── utils/               # Utility functions
+└── tests/               # Test files
 ```
 
 ## Development Setup
@@ -37,18 +37,32 @@ cli/
 
 ## Adding New Commands
 
-### Step 1: Create Command File
+### Step 1: Create Command Module
 
-Create a new file in the `commands/` directory:
+Create a new directory in the `commands/` directory with the following structure:
 
 ```python
-# commands/new_command.py
-import typer
+# commands/new_command/__init__.py
+# Empty file to make it a module
 
-def new_command():
+# commands/new_command/command.py
+import typer
+from .messages import new_command_help
+
+new_command_app = typer.Typer(
+    help=new_command_help,
+    invoke_without_command=True
+)
+
+@new_command_app.callback()
+def new_command_callback(ctx: typer.Context):
     """Description of the new command"""
-    # Command implementation
-    pass
+    if ctx.invoked_subcommand is None:
+        # Main command logic here
+        pass
+
+# commands/new_command/messages.py
+new_command_help = "Description of the new command"
 ```
 
 ### Step 2: Register Command
@@ -56,12 +70,9 @@ def new_command():
 Import and register the command in `main.py`:
 
 ```python
-from commands.new_command import new_command
+from commands.new_command.command import new_command_app
 
-@app.command()
-def new():
-    """Description of the new command"""
-    new_command()
+app.add_typer(new_command_app, name="new-command")
 ```
 
 ### Step 3: Add Tests
@@ -69,7 +80,7 @@ def new():
 Create corresponding test files in the `tests/` directory:
 
 ```python
-# tests/test_commands_new.py
+# tests/test_commands_new_command.py
 import pytest
 from typer.testing import CliRunner
 from cli.main import app
@@ -77,7 +88,7 @@ from cli.main import app
 runner = CliRunner()
 
 def test_new_command():
-    result = runner.invoke(app, ["new"])
+    result = runner.invoke(app, ["new-command"])
     assert result.exit_code == 0
 ```
 
@@ -151,10 +162,12 @@ Follow these guidelines:
 
 ### Command Guidelines
 
-1. **Descriptive names**: Use clear, action-oriented command names
-2. **Help text**: Provide helpful descriptions for all commands
-3. **Error handling**: Handle errors gracefully with clear messages
-4. **Exit codes**: Return appropriate exit codes (0 for success, 1 for error)
+1. **Use Typer apps**: Structure commands as Typer applications
+2. **Separate messages**: Keep command messages in separate files
+3. **Descriptive names**: Use clear, action-oriented command names
+4. **Help text**: Provide helpful descriptions for all commands
+5. **Error handling**: Handle errors gracefully with clear messages
+6. **Exit codes**: Return appropriate exit codes (0 for success, 1 for error)
 
 ### Documentation Guidelines
 
@@ -193,8 +206,8 @@ export ENV=DEVELOPMENT
    ```
 
 2. **Make changes**
-   - Add new command files
-   - Update main.py
+   - Add new command module with proper structure
+   - Update main.py to register the command
    - Add tests
    - Update documentation
 

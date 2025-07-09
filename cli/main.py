@@ -1,11 +1,13 @@
 import typer
-from commands.version import version_command, version_callback
-from commands.test import test_command
+from commands.version.command import version_app, main_version_callback
+from commands.preflight.command import preflight_app
+from commands.test.command import test_app
+from utils.message import application_name, application_description, application_no_args_is_help, application_add_completion, application_version_help
 
 app = typer.Typer(
-    name="nixopus",
-    help="NixOpus CLI - A powerful deployment and management tool",
-    add_completion=False,
+    name=application_name,
+    help=application_description,
+    add_completion=application_add_completion,
 )
 
 @app.callback()
@@ -14,21 +16,15 @@ def main(
         None,
         "--version",
         "-v",
-        callback=version_callback,
-        help="Show version information"
-    )
+        callback=main_version_callback,
+        help=application_version_help,
+    )   
 ):
     pass
 
-@app.command()
-def version():
-    """Show version information"""
-    version_command()
-
-@app.command()
-def test(target: str = typer.Argument(None, help="Test target (e.g., version)")):
-    """Run tests (only in DEVELOPMENT environment)"""
-    test_command(target)
+app.add_typer(test_app, name="test")
+app.add_typer(preflight_app, name="preflight")
+app.add_typer(version_app, name="version")
 
 if __name__ == "__main__":
     app()
