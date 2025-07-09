@@ -78,6 +78,15 @@ export default withMermaid(
           ]
         },
         {
+          text: 'CLI',
+          items: [
+            { text: 'Overview', link: '/cli/index.md' },
+            { text: 'Installation', link: '/cli/installation.md' },
+            { text: 'Commands', link: '/cli/commands.md' },
+            { text: 'Development', link: '/cli/development.md' }
+          ]
+        },
+        {
           text: 'Blog',
           items: [
             { text: 'Latest Posts', link: '/blog/' }
