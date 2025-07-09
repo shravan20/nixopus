@@ -24,15 +24,20 @@ cli/
 
 1. **Clone and Install**
    ```bash
-   git clone https://github.com/your-org/nixopus.git
+   git clone https://github.com/raghavyuva/nixopus.git
    cd nixopus/cli
-   pip install -e ".[dev]"
+   make install
    ```
 
 2. **Verify Installation**
    ```bash
-   nixopus version
-   pytest
+   make version
+   make test
+   ```
+
+3. **Available Commands**
+   ```bash
+   make help
    ```
 
 ## Adding New Commands
@@ -102,16 +107,19 @@ Add the command to the appropriate table in the [Commands Reference](commands.md
 
 ```bash
 # Run all tests
-pytest
+make test
 
 # Run with coverage
-pytest --cov=core --cov=utils --cov-report=term-missing
+make test-cov
+
+# Run tests in watch mode
+make test-watch
 
 # Run specific test
-pytest tests/test_commands_version.py
+poetry run pytest tests/test_commands_version.py
 
 # Run with verbose output
-pytest -v
+poetry run pytest -v
 ```
 
 ### Test Structure
@@ -213,7 +221,7 @@ export ENV=DEVELOPMENT
 
 3. **Run tests**
    ```bash
-   pytest
+   make test
    ```
 
 4. **Commit changes**
@@ -223,6 +231,26 @@ export ENV=DEVELOPMENT
    ```
 
 5. **Submit pull request**
+
+## Makefile Commands
+
+The project includes a Makefile with common development tasks:
+
+```bash
+make help          
+make install       
+make install-dev   
+make test          
+make test-cov      
+make test-watch    
+make lint          
+make format
+make clean
+make build         
+make publish       
+make dev           
+make run
+```
 
 ## Testing Guidelines
 
