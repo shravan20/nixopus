@@ -98,7 +98,6 @@ func GetFeatureFlagCheckURL() string {
 	return baseURL + "/feature-flags/check"
 }
 
-// Deploy application URLs
 func GetDeployApplicationURL() string {
 	return baseURL + "/deploy/application"
 }
