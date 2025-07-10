@@ -8,7 +8,7 @@ install:
 	poetry install
 
 install-dev: 
-	poetry install --with dev
+	poetry install --with dev --no-root
 
 test: 
 	poetry run pytest

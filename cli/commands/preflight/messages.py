@@ -1,2 +1,8 @@
 preflight_check_app_help = "Checks to ensure the system is ready for nixopus self-hosting"
 running_preflight_checks = "Running preflight checks..."
+check_ports = "Checking if ports are available..."
+ports_list_contains_less_than_1_port = "Ports list contains less than 1 port"
+ports_list_contains_values_outside_range_1_65535 = "Ports list contains values outside the range 1-65535"
+ports_list_contains_non_integer_values = "Ports list contains non-integer values"
+available = "available"
+not_available = "not available"
