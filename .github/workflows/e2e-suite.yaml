@@ -11,6 +11,16 @@ on:
       - "api/**/*.yaml"
       - "api/**/*.yml"
       - "api/**/*.sql"
+  pull_request:
+    branches:
+      - "master"
+      - "main"
+      - "feat/develop"
+    paths:
+      - "api/**/*.go"
+      - "api/**/*.yaml"
+      - "api/**/*.yml"
+      - "api/**/*.sql"
   workflow_dispatch:
     inputs:
       branch:
