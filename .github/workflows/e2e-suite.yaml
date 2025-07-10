@@ -1,15 +1,25 @@
-name: Test Nixopus API
+name: E2E Test Nixopus API
 
 on:
   push:
     branches:
-      - 'master'
-      - 'feat/develop'
+      - "master"
+      - "main"
+      - "feat/develop"
     paths:
-      - 'api/**'
+      - "api/**/*.go"
+      - "api/**/*.yaml"
+      - "api/**/*.yml"
+      - "api/**/*.sql"
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Custom branch to run the E2E tests on"
+        required: true
+        default: "main"
 
 jobs:
-  test:
+  e2e-suite:
     runs-on: ubuntu-latest
     services:
       test-db:
@@ -28,17 +38,17 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version: "1.23.4"
           check-latest: true
           cache: true
           cache-dependency-path: api/go.sum
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
+
       - name: Wait for PostgreSQL
         run: |
           for i in {1..10}; do
@@ -51,7 +61,7 @@ jobs:
           done
           echo "PostgreSQL failed to start"
           exit 1
-      
+
       - name: Build and run tests
         env:
           DB_HOST: localhost
@@ -60,4 +70,4 @@ jobs:
           DB_PASSWORD: nixopus
           DB_NAME: nixopus_test
         run: |
-          cd api && make test 
+          cd api && make test-all
