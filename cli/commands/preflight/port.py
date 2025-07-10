@@ -1,7 +1,8 @@
 import re, json
 from typing import List, TypedDict, Union, Any
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pydantic import BaseModel, Field, field_validator
-from .messages import available, not_available
+from .messages import available, not_available, error_checking_port, host_must_be_localhost_or_valid_ip_or_domain
 from core.preflight.port import is_port_available
 from utils.logger import Logger
 
@@ -35,7 +36,7 @@ class PortConfig(BaseModel):
         if re.match(domain_pattern, v):
             return v
         
-        raise ValueError("Host must be 'localhost', a valid IP address, or a valid domain name")
+        raise ValueError(host_must_be_localhost_or_valid_ip_or_domain)
 
     @staticmethod
     def format(data: Union[str, List[PortCheckResult], Any], output_type: str) -> str:
@@ -52,15 +53,36 @@ class PortConfig(BaseModel):
         """Check if ports are available"""
         logger = Logger(verbose=config.verbose)
         results = []
-        for port in config.ports:
+        
+        def check_single_port(port: int) -> PortCheckResult:
+            """Check availability of a single port"""
             logger.debug(f"Checking port {port} on host {config.host}")
             status = available if is_port_available(config.host, port, config.timeout) else not_available
-            result = {
+            return {
                 "port": port,
                 "status": status,
                 "host": config.host if config.verbose else None,
                 "error": None,
                 "is_available": status == available
             }
-            results.append(result)
-        return results
+        
+        max_workers = min(len(config.ports), 50)
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            port_futures = {executor.submit(check_single_port, port): port for port in config.ports}
+            
+            for future in as_completed(port_futures):
+                try:
+                    result = future.result()
+                    results.append(result)
+                except Exception as e:
+                    port = port_futures[future]
+                    logger.error(error_checking_port.format(port=port, error=str(e)))
+                    results.append({
+                        "port": port,
+                        "status": not_available,
+                        "host": config.host if config.verbose else None,
+                        "error": str(e),
+                        "is_available": False
+                    })
+        
+        return sorted(results, key=lambda x: x["port"])

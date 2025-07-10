@@ -6,3 +6,5 @@ ports_list_contains_values_outside_range_1_65535 = "Ports list contains values o
 ports_list_contains_non_integer_values = "Ports list contains non-integer values"
 available = "available"
 not_available = "not available"
+error_checking_port = "Error checking port {port}: {error}"
+host_must_be_localhost_or_valid_ip_or_domain = "Host must be 'localhost', a valid IP address, or a valid domain name"
