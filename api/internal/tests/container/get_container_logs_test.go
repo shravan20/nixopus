@@ -11,7 +11,7 @@ import (
 
 func TestGetContainerLogs(t *testing.T) {
 	setup := testutils.NewTestSetup()
-	user, org, err := setup.GetTestAuthResponse()
+	user, org, err := setup.GetTestAuthResponseWithAllFeatures()
 	if err != nil {
 		t.Fatalf("failed to get test auth response: %v", err)
 	}

@@ -14,6 +14,8 @@ import (
 	authService "github.com/raghavyuva/nixopus-api/internal/features/auth/service"
 	user_storage "github.com/raghavyuva/nixopus-api/internal/features/auth/storage"
 	authTypes "github.com/raghavyuva/nixopus-api/internal/features/auth/types"
+	feature_flags_service "github.com/raghavyuva/nixopus-api/internal/features/feature-flags/service"
+	feature_flags_storage "github.com/raghavyuva/nixopus-api/internal/features/feature-flags/storage"
 	"github.com/raghavyuva/nixopus-api/internal/features/logger"
 	organization_service "github.com/raghavyuva/nixopus-api/internal/features/organization/service"
 	organization_storage "github.com/raghavyuva/nixopus-api/internal/features/organization/storage"
@@ -273,4 +275,50 @@ func (s *TestSetup) RegistrationHelper(email, password, username, orgName, orgDe
 	}
 
 	return &authResponse, org, nil
+}
+
+// EnableAllFeaturesForOrg to enable all features for a test organization
+func (s *TestSetup) EnableAllFeaturesForOrg(orgID uuid.UUID) error {
+	featureStorage := &feature_flags_storage.FeatureFlagStorage{DB: s.DB, Ctx: s.Ctx}
+	featureService := feature_flags_service.NewFeatureFlagService(featureStorage, s.Logger, s.Ctx)
+
+	features := []string{
+		"terminal",
+		"container",
+		"domain",
+		"file_manager",
+		"notifications",
+		"monitoring",
+		"github_connector",
+		"audit",
+		"self_hosted",
+		"deploy",
+	}
+
+	for _, feature := range features {
+		req := types.UpdateFeatureFlagRequest{
+			FeatureName: feature,
+			IsEnabled:   true,
+		}
+		if err := featureService.UpdateFeatureFlag(orgID, req); err != nil {
+			return fmt.Errorf("failed to enable feature %s: %w", feature, err)
+		}
+	}
+
+	return nil
+}
+
+// GetTestAuthResponseWithAllFeatures to create a test user and organization with all features enabled
+func (s *TestSetup) GetTestAuthResponseWithAllFeatures() (*authTypes.AuthResponse, *types.Organization, error) {
+	authResponse, org, err := s.GetTestAuthResponse()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Enable all features for the test organization
+	if err := s.EnableAllFeaturesForOrg(org.ID); err != nil {
+		return nil, nil, fmt.Errorf("failed to enable features for test org: %w", err)
+	}
+
+	return authResponse, org, nil
 }
