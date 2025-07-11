@@ -90,11 +90,7 @@ jobs:
           ALLOWED_ORIGIN=http://localhost:3000
           EOF
 
-      - name: Install Air
-        run: |
-          go install github.com/air-verse/air@latest
-
-      - name: Start API server with Air
+      - name: Start API server with Go
         env:
           DB_HOST: localhost
           DB_PORT: 5433
@@ -104,20 +100,37 @@ jobs:
           PORT: 8080
         run: |
           cd api
-          air &
-          echo $! > air.pid
+          echo "Contents of .env file:"
+          cat .env
+          echo "Starting server with go run..."
+          go run main.go > server.log 2>&1 &
+          echo $! > server.pid
+          echo "Server started with PID: $(cat server.pid)"
+          sleep 5
+          echo "Server log output:"
+          cat server.log || echo "No server.log file found"
 
       - name: Wait for API server
         run: |
+          cd api
           for i in {1..50}; do
+            echo "Attempt $i: Testing connection to localhost:8080..."
             if curl -f http://localhost:8080/api/v1/health; then
               echo "API server is ready"
               exit 0
             fi
             echo "Waiting for API server... $i"
             sleep 2
+            
+            # Show server log every 10 attempts
+            if [ $((i % 10)) -eq 0 ]; then
+              echo "Server log at attempt $i:"
+              cat server.log || echo "No server.log file"
+            fi
           done
           echo "API server failed to start"
+          echo "Final server log:"
+          cat server.log || echo "No server.log file"
           exit 1
 
       - name: Run unit tests
@@ -144,8 +157,9 @@ jobs:
         if: always()
         run: |
           cd api
-          if [ -f air.pid ]; then
-            kill $(cat air.pid) || true
-            rm air.pid
+          # Kill server process if it exists
+          if [ -f server.pid ]; then
+            kill $(cat server.pid) || true
+            rm server.pid
           fi
           lsof -ti:8080 | xargs kill -9 || true
