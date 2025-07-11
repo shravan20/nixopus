@@ -94,7 +94,7 @@ func TestListContainers(t *testing.T) {
 
 func TestListContainersWithSpecificContainer(t *testing.T) {
 	setup := testutils.NewTestSetup()
-	user, org, err := setup.GetTestAuthResponse()
+	user, org, err := setup.GetTestAuthResponseWithAllFeatures()
 	if err != nil {
 		t.Fatalf("failed to get test auth response: %v", err)
 	}
@@ -117,7 +117,7 @@ func TestListContainersWithSpecificContainer(t *testing.T) {
 
 func TestListContainersErrorHandling(t *testing.T) {
 	setup := testutils.NewTestSetup()
-	user, org, err := setup.GetTestAuthResponse()
+	user, org, err := setup.GetTestAuthResponseWithAllFeatures()
 	if err != nil {
 		t.Fatalf("failed to get test auth response: %v", err)
 	}

@@ -11,7 +11,7 @@ import (
 
 func TestGetFeatureFlags(t *testing.T) {
 	setup := testutils.NewTestSetup()
-	user, org, err := setup.GetTestAuthResponse()
+	user, org, err := setup.GetTestAuthResponseWithAllFeatures()
 	if err != nil {
 		t.Fatalf("failed to get test auth response: %v", err)
 	}
@@ -104,7 +104,7 @@ func TestGetFeatureFlags(t *testing.T) {
 
 func TestUpdateFeatureFlag(t *testing.T) {
 	setup := testutils.NewTestSetup()
-	user, org, err := setup.GetTestAuthResponse()
+	user, org, err := setup.GetTestAuthResponseWithAllFeatures()
 	if err != nil {
 		t.Fatalf("failed to get test auth response: %v", err)
 	}
@@ -312,7 +312,7 @@ func TestUpdateFeatureFlag(t *testing.T) {
 
 func TestIsFeatureEnabled(t *testing.T) {
 	setup := testutils.NewTestSetup()
-	user, org, err := setup.GetTestAuthResponse()
+	user, org, err := setup.GetTestAuthResponseWithAllFeatures()
 	if err != nil {
 		t.Fatalf("failed to get test auth response: %v", err)
 	}
@@ -469,7 +469,7 @@ func TestIsFeatureEnabled(t *testing.T) {
 
 func TestFeatureFlagsCRUDFlow(t *testing.T) {
 	setup := testutils.NewTestSetup()
-	user, org, err := setup.GetTestAuthResponse()
+	user, org, err := setup.GetTestAuthResponseWithAllFeatures()
 	if err != nil {
 		t.Fatalf("failed to get test auth response: %v", err)
 	}
@@ -560,7 +560,7 @@ func TestFeatureFlagsCRUDFlow(t *testing.T) {
 
 func TestFeatureFlagPermissions(t *testing.T) {
 	setup := testutils.NewTestSetup()
-	user, org, err := setup.GetTestAuthResponse()
+	user, org, err := setup.GetTestAuthResponseWithAllFeatures()
 	if err != nil {
 		t.Fatalf("failed to get test auth response: %v", err)
 	}
@@ -612,7 +612,7 @@ func TestFeatureFlagPermissions(t *testing.T) {
 
 func TestFeatureFlagErrorHandling(t *testing.T) {
 	setup := testutils.NewTestSetup()
-	user, org, err := setup.GetTestAuthResponse()
+	user, org, err := setup.GetTestAuthResponseWithAllFeatures()
 	if err != nil {
 		t.Fatalf("failed to get test auth response: %v", err)
 	}

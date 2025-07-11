@@ -121,6 +121,8 @@ func findMigrationsPath() string {
 		"../../../migrations",
 		"../../../../migrations",
 		"migrations",
+		"../../migrations",
+		"../migrations",
 	}
 
 	for _, path := range paths {
@@ -224,7 +226,9 @@ func (s *TestSetup) CreateTestUserAndOrg() (*types.User, *types.Organization, er
 }
 
 func (s *TestSetup) GetTestAuthResponse() (*authTypes.AuthResponse, *types.Organization, error) {
-	authResponse, org, err := s.RegistrationHelper("test@example.com", "Password123@", "testuser", "test-org", "Test organization", "admin")
+	// Make organization name unique to avoid conflicts
+	orgName := fmt.Sprintf("testuser's Team-%s", uuid.New().String()[:8])
+	authResponse, org, err := s.RegistrationHelper("test@example.com", "Password123@", "testuser", orgName, "Test organization", "admin")
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create test user: %w", err)
 	}
@@ -249,8 +253,8 @@ func (s *TestSetup) RegistrationHelper(email, password, username, orgName, orgDe
 	// Create test organization
 	org := &types.Organization{
 		ID:          uuid.New(),
-		Name:        "test-org",
-		Description: "Test organization",
+		Name:        orgName,
+		Description: orgDescription,
 	}
 
 	if err := s.OrgStorage.CreateOrganization(*org); err != nil {
@@ -273,6 +277,17 @@ func (s *TestSetup) RegistrationHelper(email, password, username, orgName, orgDe
 	if err := s.OrgStorage.AddUserToOrganization(*orgUser); err != nil {
 		return nil, nil, fmt.Errorf("failed to add user to organization: %w", err)
 	}
+
+	// Verify the user was actually added to the organization
+	belongs, err := s.UserStorage.UserBelongsToOrganization(authResponse.User.ID.String(), org.ID.String())
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to verify user organization membership: %w", err)
+	}
+	if !belongs {
+		return nil, nil, fmt.Errorf("user was not successfully added to organization - membership verification failed")
+	}
+
+	s.Logger.Log(logger.Info, "User organization membership verified", fmt.Sprintf("user_id=%s, org_id=%s", authResponse.User.ID.String(), org.ID.String()))
 
 	return &authResponse, org, nil
 }
