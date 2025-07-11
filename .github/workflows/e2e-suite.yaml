@@ -109,7 +109,7 @@ jobs:
 
       - name: Wait for API server
         run: |
-          for i in {1..30}; do
+          for i in {1..50}; do
             if curl -f http://localhost:8080/api/v1/health; then
               echo "API server is ready"
               exit 0
