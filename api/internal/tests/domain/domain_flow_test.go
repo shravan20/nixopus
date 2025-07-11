@@ -228,7 +228,7 @@ func TestGetDomains(t *testing.T) {
 
 func TestUpdateDomain(t *testing.T) {
 	setup := testutils.NewTestSetup()
-	user, org, err := setup.GetTestAuthResponse()
+	user, org, err := setup.GetTestAuthResponseWithAllFeatures()
 	if err != nil {
 		t.Fatalf("failed to get test auth response: %v", err)
 	}
@@ -381,7 +381,7 @@ func TestUpdateDomain(t *testing.T) {
 
 func TestDeleteDomain(t *testing.T) {
 	setup := testutils.NewTestSetup()
-	user, org, err := setup.GetTestAuthResponse()
+	user, org, err := setup.GetTestAuthResponseWithAllFeatures()
 	if err != nil {
 		t.Fatalf("failed to get test auth response: %v", err)
 	}
@@ -531,7 +531,7 @@ func TestDeleteDomain(t *testing.T) {
 
 func TestGenerateRandomSubDomain(t *testing.T) {
 	setup := testutils.NewTestSetup()
-	user, org, err := setup.GetTestAuthResponse()
+	user, org, err := setup.GetTestAuthResponseWithAllFeatures()
 	if err != nil {
 		t.Fatalf("failed to get test auth response: %v", err)
 	}
@@ -623,7 +623,7 @@ func TestGenerateRandomSubDomain(t *testing.T) {
 
 func TestDomainsCRUDFlow(t *testing.T) {
 	setup := testutils.NewTestSetup()
-	user, org, err := setup.GetTestAuthResponse()
+	user, org, err := setup.GetTestAuthResponseWithAllFeatures()
 	if err != nil {
 		t.Fatalf("failed to get test auth response: %v", err)
 	}
@@ -724,7 +724,7 @@ func TestDomainsCRUDFlow(t *testing.T) {
 
 func TestDomainPermissions(t *testing.T) {
 	setup := testutils.NewTestSetup()
-	user, org, err := setup.GetTestAuthResponse()
+	user, org, err := setup.GetTestAuthResponseWithAllFeatures()
 	if err != nil {
 		t.Fatalf("failed to get test auth response: %v", err)
 	}
@@ -802,7 +802,7 @@ func TestDomainPermissions(t *testing.T) {
 
 func TestDomainErrorHandling(t *testing.T) {
 	setup := testutils.NewTestSetup()
-	user, org, err := setup.GetTestAuthResponse()
+	user, org, err := setup.GetTestAuthResponseWithAllFeatures()
 	if err != nil {
 		t.Fatalf("failed to get test auth response: %v", err)
 	}
