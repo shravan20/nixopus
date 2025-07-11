@@ -152,7 +152,7 @@ jobs:
           cat server.log || echo "No server.log file"
           exit 1
 
-      - name: Run unit tests
+      - name: Run unit tests + intg tests
         env:
           DB_HOST: localhost
           DB_PORT: 5433
@@ -160,17 +160,7 @@ jobs:
           DB_PASSWORD: nixopus
           DB_NAME: nixopus_test
         run: |
-          cd api && go test -p 1 ./internal/features/... -v -count=1
-
-      - name: Run integration tests
-        env:
-          DB_HOST: localhost
-          DB_PORT: 5433
-          DB_USER: nixopus
-          DB_PASSWORD: nixopus
-          DB_NAME: nixopus_test
-        run: |
-          cd api && go test -p 1 ./internal/tests/... -v -count=1
+          cd api && make test-all
 
       - name: Stop API server
         if: always()
