@@ -106,7 +106,7 @@ jobs:
           cd api
           air &
           echo $! > air.pid
-          
+
       - name: Wait for API server
         run: |
           for i in {1..30}; do
@@ -144,10 +144,8 @@ jobs:
         if: always()
         run: |
           cd api
-          # Kill Air process if it exists
           if [ -f air.pid ]; then
             kill $(cat air.pid) || true
             rm air.pid
           fi
-          # Also kill any remaining processes on port 8080
           lsof -ti:8080 | xargs kill -9 || true
