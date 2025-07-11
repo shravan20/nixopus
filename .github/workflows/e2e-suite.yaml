@@ -72,7 +72,55 @@ jobs:
           echo "PostgreSQL failed to start"
           exit 1
 
-      - name: Build and run tests
+      - name: Create .env file
+        run: |
+          cd api
+          cat > .env << EOF
+          DB_NAME=nixopus_test
+          USERNAME=nixopus
+          PASSWORD=nixopus
+          HOST_NAME=localhost
+          DB_PORT=5433
+          SSL_MODE=disable
+          PORT=8080
+          DOCKER_HOST=unix:///var/run/docker.sock
+          JWT_SECRET=test-jwt-secret-key-for-ci
+          REFRESH_TOKEN_SECRET=test-refresh-secret-key-for-ci
+          ENV=development
+          ALLOWED_ORIGIN=http://localhost:3000
+          EOF
+
+      - name: Install Air
+        run: |
+          go install github.com/air-verse/air@latest
+
+      - name: Start API server with Air
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5433
+          DB_USER: nixopus
+          DB_PASSWORD: nixopus
+          DB_NAME: nixopus_test
+          PORT: 8080
+        run: |
+          cd api
+          air &
+          echo $! > air.pid
+          
+      - name: Wait for API server
+        run: |
+          for i in {1..30}; do
+            if curl -f http://localhost:8080/api/v1/health; then
+              echo "API server is ready"
+              exit 0
+            fi
+            echo "Waiting for API server... $i"
+            sleep 2
+          done
+          echo "API server failed to start"
+          exit 1
+
+      - name: Run unit tests
         env:
           DB_HOST: localhost
           DB_PORT: 5433
@@ -80,4 +128,26 @@ jobs:
           DB_PASSWORD: nixopus
           DB_NAME: nixopus_test
         run: |
-          cd api && make test-all
+          cd api && go test -p 1 ./internal/features/... -v -count=1
+
+      - name: Run integration tests
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5433
+          DB_USER: nixopus
+          DB_PASSWORD: nixopus
+          DB_NAME: nixopus_test
+        run: |
+          cd api && go test -p 1 ./internal/tests/... -v -count=1
+
+      - name: Stop API server
+        if: always()
+        run: |
+          cd api
+          # Kill Air process if it exists
+          if [ -f air.pid ]; then
+            kill $(cat air.pid) || true
+            rm air.pid
+          fi
+          # Also kill any remaining processes on port 8080
+          lsof -ti:8080 | xargs kill -9 || true
