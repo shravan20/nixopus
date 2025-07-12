@@ -3,7 +3,9 @@ package middleware
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -25,6 +27,10 @@ func AuthMiddleware(next http.Handler, app *storage.App, cache *cache.Cache) htt
 
 		token := r.Header.Get("Authorization")
 		if token == "" {
+			//TODO: rmove log for debugging in CI
+			if os.Getenv("ENV") == "development" {
+				log.Printf("AUTH_DEBUG: No authorization token provided for %s %s", r.Method, r.URL.Path)
+			}
 			utils.SendErrorResponse(w, "No authorization token provided", http.StatusUnauthorized)
 			return
 		}
@@ -41,12 +47,20 @@ func AuthMiddleware(next http.Handler, app *storage.App, cache *cache.Cache) htt
 
 		user, err := verifyToken(token, app.Store.DB, ctx, cache)
 		if err != nil {
+			// TODO: remove logs for debugging in CI
+			if os.Getenv("ENV") == "development" {
+				log.Printf("AUTH_DEBUG: Token verification failed for %s %s: %v", r.Method, r.URL.Path, err)
+			}
 			utils.SendErrorResponse(w, "Invalid authorization token", http.StatusUnauthorized)
 			return
 		}
 
 		claims, err := getTokenClaims(token)
 		if err != nil {
+			// TODO: remove after testing
+			if os.Getenv("ENV") == "development" {
+				log.Printf("AUTH_DEBUG: Token claims extraction failed for %s %s: %v", r.Method, r.URL.Path, err)
+			}
 			utils.SendErrorResponse(w, "Invalid token claims", http.StatusUnauthorized)
 			return
 		}
@@ -55,6 +69,10 @@ func AuthMiddleware(next http.Handler, app *storage.App, cache *cache.Cache) htt
 		twoFactorVerified, _ := claims["2fa_verified"].(bool)
 
 		if twoFactorEnabled && !twoFactorVerified && !is2FAVerificationEndpoint(r.URL.Path) {
+			// TODO: Log for debugging in CI , remvoe after testing
+			if os.Getenv("ENV") == "development" {
+				log.Printf("AUTH_DEBUG: 2FA required for %s %s", r.Method, r.URL.Path)
+			}
 			utils.SendErrorResponse(w, "Two-factor authentication required", http.StatusForbidden)
 			return
 		}
@@ -65,6 +83,10 @@ func AuthMiddleware(next http.Handler, app *storage.App, cache *cache.Cache) htt
 		if !isAuthEndpoint(r.URL.Path) {
 			organizationID := r.Header.Get("X-Organization-Id")
 			if organizationID == "" {
+				// TODO: Log for debugging in CI , remove after testing
+				if os.Getenv("ENV") == "development" {
+					log.Printf("AUTH_DEBUG: No organization ID provided for %s %s", r.Method, r.URL.Path)
+				}
 				utils.SendErrorResponse(w, "No organization ID provided", http.StatusBadRequest)
 				return
 			}
@@ -83,11 +105,19 @@ func AuthMiddleware(next http.Handler, app *storage.App, cache *cache.Cache) htt
 				}
 				belongsToOrg, err = userStorage.UserBelongsToOrganization(user.ID.String(), organizationID)
 				if err != nil {
+					// TODO: remove log for debugging in CI
+					if os.Getenv("ENV") == "development" {
+						log.Printf("AUTH_DEBUG: Error verifying org membership for %s %s: user=%s, org=%s, error=%v", r.Method, r.URL.Path, user.ID.String(), organizationID, err)
+					}
 					utils.SendErrorResponse(w, "Error verifying organization membership", http.StatusInternalServerError)
 					return
 				}
 
 				if !belongsToOrg {
+					// Log for debugging in CI
+					if os.Getenv("ENV") == "development" {
+						log.Printf("AUTH_DEBUG: User does not belong to organization for %s %s: user=%s, org=%s", r.Method, r.URL.Path, user.ID.String(), organizationID)
+					}
 					utils.SendErrorResponse(w, "User does not belong to the specified organization", http.StatusForbidden)
 					return
 				}

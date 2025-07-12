@@ -134,17 +134,38 @@ jobs:
           cd api
           for i in {1..50}; do
             echo "Attempt $i: Testing connection to localhost:8080..."
-            if curl -f http://localhost:8080/api/v1/health; then
-              echo "API server is ready"
-              exit 0
+            
+            # Check if server process is still running
+            if [ -f server.pid ] && ! kill -0 $(cat server.pid) 2>/dev/null; then
+              echo "Server process died, checking logs:"
+              cat server.log || echo "No server.log file"
+              exit 1
             fi
+            
+            # Test health endpoint
+            if curl -f http://localhost:8080/api/v1/health; then
+              echo "Health check passed, testing database connectivity..."
+              
+              # Test a simple auth endpoint to verify full readiness
+              response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/v1/auth/is-admin-registered)
+              if [ "$response" = "200" ]; then
+                echo "API server is fully ready (health + auth endpoints responding)"
+                
+                # Give additional time for any async initialization
+                sleep 3
+                exit 0
+              else
+                echo "Health passed but auth endpoint returned $response, server not fully ready"
+              fi
+            fi
+            
             echo "Waiting for API server... $i"
             sleep 2
             
             # Show server log every 10 attempts
             if [ $((i % 10)) -eq 0 ]; then
               echo "Server log at attempt $i:"
-              cat server.log || echo "No server.log file"
+              tail -20 server.log || echo "No server.log file"
             fi
           done
           echo "API server failed to start"
@@ -159,6 +180,8 @@ jobs:
           DB_USER: nixopus
           DB_PASSWORD: nixopus
           DB_NAME: nixopus_test
+          TEST_TIMEOUT: 30s
+          TEST_RETRY_COUNT: 3
         run: |
           cd api && make test-all
 

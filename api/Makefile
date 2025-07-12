@@ -11,6 +11,9 @@ test:
 test-all:
 	@go test -p 1 ./... -v -count=1
 
+test-all-ci:
+	@go test -p 1 ./... -v -count=1 -timeout=15m -failfast
+
 test-routes:
 	@go test -p 1 ./internal/tests/routes/... -v -count=1
 

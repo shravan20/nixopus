@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -175,9 +176,19 @@ func NewTestSetup() *TestSetup {
 		panic("ctx is nil - context not initialized")
 	}
 
-	// Clean database before each test
-	if err := cleanDatabase(); err != nil {
-		panic(fmt.Sprintf("failed to clean database: %v", err))
+	// Note: QUick validation to clean database before each test with retry logic for CI
+	maxRetries := 3
+	var err error
+	for i := 0; i < maxRetries; i++ {
+		err = cleanDatabase()
+		if err == nil {
+			break
+		}
+		fmt.Printf("Database cleanup attempt %d failed: %v, retrying...\n", i+1, err)
+		time.Sleep(time.Duration(i+1) * time.Second)
+	}
+	if err != nil {
+		panic(fmt.Sprintf("failed to clean database after %d attempts: %v", maxRetries, err))
 	}
 
 	l := logger.NewLogger()
@@ -188,14 +199,25 @@ func NewTestSetup() *TestSetup {
 	permStorage := &permissions_storage.PermissionStorage{DB: testDB, Ctx: ctx}
 	roleStorage := &role_storage.RoleStorage{DB: testDB, Ctx: ctx}
 	orgStorage := &organization_storage.OrganizationStore{DB: testDB, Ctx: ctx}
-	cache, err := cache.NewCache(getEnvOrDefault("REDIS_URL", "redis://localhost:6379"))
-	if err != nil {
-		panic(fmt.Sprintf("failed to create cache: %v", err))
+
+	// Initialize cache with retry logic
+	var cacheInstance *cache.Cache
+	for i := 0; i < maxRetries; i++ {
+		cacheInstance, err = cache.NewCache(getEnvOrDefault("REDIS_URL", "redis://localhost:6379"))
+		if err == nil {
+			break
+		}
+		fmt.Printf("Cache connection attempt %d failed: %v, retrying...\n", i+1, err)
+		time.Sleep(time.Duration(i+1) * time.Second)
 	}
+	if err != nil {
+		panic(fmt.Sprintf("failed to create cache after %d attempts: %v", maxRetries, err))
+	}
+
 	// Create services
 	permService := permissions_service.NewPermissionService(store, ctx, l, permStorage)
 	roleService := role_service.NewRoleService(store, ctx, l, roleStorage)
-	orgService := organization_service.NewOrganizationService(store, ctx, l, orgStorage, cache)
+	orgService := organization_service.NewOrganizationService(store, ctx, l, orgStorage, cacheInstance)
 	authService := authService.NewAuthService(userStorage, l, permService, roleService, orgService, ctx)
 
 	return &TestSetup{
@@ -310,15 +332,29 @@ func (s *TestSetup) EnableAllFeaturesForOrg(orgID uuid.UUID) error {
 		"deploy",
 	}
 
+	// Add retry logic for feature enabling in CI
+	maxRetries := 3
 	for _, feature := range features {
-		req := types.UpdateFeatureFlagRequest{
-			FeatureName: feature,
-			IsEnabled:   true,
+		var err error
+		for i := 0; i < maxRetries; i++ {
+			req := types.UpdateFeatureFlagRequest{
+				FeatureName: feature,
+				IsEnabled:   true,
+			}
+			err = featureService.UpdateFeatureFlag(orgID, req)
+			if err == nil {
+				break
+			}
+			s.Logger.Log(logger.Info, "Feature flag enable retry", fmt.Sprintf("feature=%s, attempt=%d, error=%v", feature, i+1, err))
+			time.Sleep(time.Duration(i+1) * 100 * time.Millisecond)
 		}
-		if err := featureService.UpdateFeatureFlag(orgID, req); err != nil {
-			return fmt.Errorf("failed to enable feature %s: %w", feature, err)
+		if err != nil {
+			return fmt.Errorf("failed to enable feature %s after %d attempts: %w", feature, maxRetries, err)
 		}
 	}
+
+	// Verify features were enabled with a small delay for consistency
+	time.Sleep(100 * time.Millisecond)
 
 	return nil
 }
