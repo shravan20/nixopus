@@ -1,1 +1,0 @@
-test_app_help = "Run tests (only in DEVELOPMENT environment)"
