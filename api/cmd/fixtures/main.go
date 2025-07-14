@@ -24,9 +24,10 @@ func main() {
 	)
 	flag.Parse()
 
+	// Load .env file if it exists (optional for CI/production)
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Printf("Warning: Could not load .env file: %v", err)
 	}
 
 	host := os.Getenv("HOST_NAME")
