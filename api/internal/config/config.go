@@ -29,10 +29,10 @@ func Init() *storage.Store {
 	AppConfig = types.Config{
 		DB_PORT:     os.Getenv("DB_PORT"),
 		Port:        os.Getenv("PORT"),
-		HostName:    os.Getenv("HOST_NAME"),
-		Password:    os.Getenv("PASSWORD"),
+		HostName:    os.Getenv("DB_HOST"),
+		Password:    os.Getenv("DB_PASSWORD"),
 		DBName:      os.Getenv("DB_NAME"),
-		Username:    os.Getenv("USERNAME"),
+		Username:    os.Getenv("DB_USER"),
 		SSLMode:     os.Getenv("SSL_MODE"),
 		MaxOpenConn: 10,
 		Debug:       true,
