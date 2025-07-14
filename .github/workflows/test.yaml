@@ -131,6 +131,23 @@ jobs:
           cat api/server.log || echo "No logs available"
           exit 1
       
+      - name: Load test fixtures
+        env:
+          HOST_NAME: localhost
+          DB_PORT: 5433
+          USERNAME: nixopus
+          PASSWORD: nixopus
+          DB_NAME: nixopus_test
+          REDIS_URL: redis://localhost:6379
+        run: |
+          cd api && make fixtures-recreate
+
+      - name: Verify test data loaded
+        run: |
+          sudo apt-get install -y postgresql-client
+          PGPASSWORD=nixopus psql -h localhost -p 5433 -U nixopus -d nixopus_test -c "SELECT id, name FROM organizations WHERE id = '0f2eaa45-9947-42b9-b057-b4a673995f53';"
+          PGPASSWORD=nixopus psql -h localhost -p 5433 -U nixopus -d nixopus_test -c "SELECT id, email FROM users WHERE id = 'test-user-id';"
+
       - name: Run integration tests
         env:
           HOST_NAME: localhost
@@ -149,4 +166,4 @@ jobs:
           if [ -f api/api_server.pid ]; then
             kill $(cat api/api_server.pid) || true
             rm api/api_server.pid
-          fi 
+          fi
