@@ -52,7 +52,13 @@ jobs:
           echo "PostgreSQL failed to start"
           exit 1
       
-      - name: Build and run tests
+      - name: Install Redis
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y redis-server
+          sudo systemctl start redis-server
+      
+      - name: Run unit tests
         env:
           DB_HOST: localhost
           DB_PORT: 5433
@@ -60,4 +66,68 @@ jobs:
           DB_PASSWORD: nixopus
           DB_NAME: nixopus_test
         run: |
-          cd api && make test 
+          cd api && make test
+      
+      - name: Build API server
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5433
+          DB_USER: nixopus
+          DB_PASSWORD: nixopus
+          DB_NAME: nixopus_test
+          PORT: 8080
+          HOST_NAME: localhost
+          USERNAME: nixopus
+          SSL_MODE: disable
+          REDIS_URL: redis://localhost:6379
+        run: |
+          cd api && go build -o bin/nixopus-api .
+      
+      - name: Start API server
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5433
+          DB_USER: nixopus
+          DB_PASSWORD: nixopus
+          DB_NAME: nixopus_test
+          PORT: 8080
+          HOST_NAME: localhost
+          USERNAME: nixopus
+          SSL_MODE: disable
+          REDIS_URL: redis://localhost:6379
+        run: |
+          cd api && ./bin/nixopus-api &
+          echo $! > api_server.pid
+      
+      - name: Wait for API server to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:8080/api/v1/health > /dev/null; then
+              echo "API server is ready"
+              exit 0
+            fi
+            echo "Waiting for API server... $i"
+            sleep 2
+          done
+          echo "API server failed to start"
+          exit 1
+      
+      - name: Run integration tests
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5433
+          DB_USER: nixopus
+          DB_PASSWORD: nixopus
+          DB_NAME: nixopus_test
+          API_BASE_URL: http://localhost:8080
+          REDIS_URL: redis://localhost:6379
+        run: |
+          cd api && make test-integration
+      
+      - name: Stop API server
+        if: always()
+        run: |
+          if [ -f api/api_server.pid ]; then
+            kill $(cat api/api_server.pid) || true
+            rm api/api_server.pid
+          fi 

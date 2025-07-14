@@ -8,6 +8,9 @@ run: build
 test:
 	@go test -p 1 ./internal/features/... -v -count=1
 
+test-integration:
+	@go test -p 1 ./internal/tests/... -v -count=1
+
 test-all:
 	@go test -p 1 ./... -v -count=1
 

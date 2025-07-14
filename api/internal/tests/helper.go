@@ -1,6 +1,15 @@
 package tests
 
-var baseURL = "http://localhost:8080/api/v1"
+import "os"
+
+var baseURL = getBaseURL()
+
+func getBaseURL() string {
+	if url := os.Getenv("API_BASE_URL"); url != "" {
+		return url + "/api/v1"
+	}
+	return "http://localhost:8080/api/v1"
+}
 
 func GetHealthURL() string {
 	return baseURL + "/health"
