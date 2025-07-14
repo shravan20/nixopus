@@ -60,24 +60,22 @@ jobs:
       
       - name: Run unit tests
         env:
-          DB_HOST: localhost
+          HOST_NAME: localhost
           DB_PORT: 5433
-          DB_USER: nixopus
-          DB_PASSWORD: nixopus
+          USERNAME: nixopus
+          PASSWORD: nixopus
           DB_NAME: nixopus_test
         run: |
           cd api && make test
       
       - name: Build API server
         env:
-          DB_HOST: localhost
+          HOST_NAME: localhost
           DB_PORT: 5433
-          DB_USER: nixopus
-          DB_PASSWORD: nixopus
+          USERNAME: nixopus
+          PASSWORD: nixopus
           DB_NAME: nixopus_test
           PORT: 8080
-          HOST_NAME: localhost
-          USERNAME: nixopus
           SSL_MODE: disable
           REDIS_URL: redis://localhost:6379
         run: |
@@ -85,14 +83,12 @@ jobs:
       
       - name: Start API server
         env:
-          DB_HOST: localhost
+          HOST_NAME: localhost
           DB_PORT: 5433
-          DB_USER: nixopus
-          DB_PASSWORD: nixopus
+          USERNAME: nixopus
+          PASSWORD: nixopus
           DB_NAME: nixopus_test
           PORT: 8080
-          HOST_NAME: localhost
-          USERNAME: nixopus
           SSL_MODE: disable
           REDIS_URL: redis://localhost:6379
         run: |
@@ -123,10 +119,10 @@ jobs:
       
       - name: Run integration tests
         env:
-          DB_HOST: localhost
+          HOST_NAME: localhost
           DB_PORT: 5433
-          DB_USER: nixopus
-          DB_PASSWORD: nixopus
+          USERNAME: nixopus
+          PASSWORD: nixopus
           DB_NAME: nixopus_test
           API_BASE_URL: http://localhost:8080
           REDIS_URL: redis://localhost:6379
