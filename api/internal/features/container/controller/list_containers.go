@@ -1,24 +1,32 @@
 package controller
 
 import (
-	"net/http"
-
 	"github.com/go-fuego/fuego"
 	"github.com/raghavyuva/nixopus-api/internal/features/container/types"
 	"github.com/raghavyuva/nixopus-api/internal/features/logger"
 	shared_types "github.com/raghavyuva/nixopus-api/internal/types"
 )
 
-func (c *ContainerController) ListContainers(f fuego.ContextNoBody) (*shared_types.Response, error) {
-	containers, err := c.dockerService.ListAllContainers()
-	if err != nil {
-		c.logger.Log(logger.Error, err.Error(), "")
-		return nil, fuego.HTTPError{
-			Err:    err,
-			Status: http.StatusInternalServerError,
-		}
+func (c *ContainerController) ListContainers(ctx fuego.ContextNoBody) (*shared_types.Response, error) {
+
+	// Check if Docker service is available
+	if c.dockerService.Cli == nil {
+		return &shared_types.Response{
+			Status:  "error",
+			Message: "Docker service unavailable",
+			Error:   "Container management requires Docker daemon",
+		}, nil
 	}
 
+	containers, err := c.dockerService.ListAllContainers()
+	if err != nil {
+		c.logger.Log(logger.Error, "Failed to list containers", err.Error())
+		return &shared_types.Response{
+			Status:  "error",
+			Message: "Failed to list containers",
+			Error:   err.Error(),
+		}, nil
+	}
 	var result []types.Container
 	for _, container := range containers {
 		containerInfo, err := c.dockerService.GetContainerById(container.ID)

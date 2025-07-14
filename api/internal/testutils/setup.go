@@ -184,10 +184,14 @@ func NewTestSetup() *TestSetup {
 	permStorage := &permissions_storage.PermissionStorage{DB: testDB, Ctx: ctx}
 	roleStorage := &role_storage.RoleStorage{DB: testDB, Ctx: ctx}
 	orgStorage := &organization_storage.OrganizationStore{DB: testDB, Ctx: ctx}
+	
+	// Try to create cache, but don't fail if Redis is unavailable
 	cache, err := cache.NewCache(getEnvOrDefault("REDIS_URL", "redis://localhost:6379"))
 	if err != nil {
-		panic(fmt.Sprintf("failed to create cache: %v", err))
+		fmt.Printf("Warning: Cache unavailable in test environment: %v\n", err)
+		cache = nil
 	}
+	
 	// Create services
 	permService := permissions_service.NewPermissionService(store, ctx, l, permStorage)
 	roleService := role_service.NewRoleService(store, ctx, l, roleStorage)

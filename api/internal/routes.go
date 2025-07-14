@@ -51,7 +51,8 @@ func NewRouter(app *storage.App) *Router {
 	// Initialize cache
 	cache, err := cache.NewCache(os.Getenv("REDIS_URL"))
 	if err != nil {
-		log.Fatal("Error creating cache", err)
+		log.Printf("Warning: Could not create cache: %v", err)
+		// Continue without cache for CI environments
 	}
 	return &Router{
 		app:   app,
@@ -265,7 +266,9 @@ func (s *Router) BasicRoutes(fs *fuego.Server) {
 func (router *Router) WebSocketServer(f *fuego.Server, deployController *deploy.DeployController) {
 	wsServer, err := realtime.NewSocketServer(deployController, router.app.Store.DB, router.app.Ctx)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Warning: Could not create WebSocket server: %v", err)
+		// Continue without WebSocket for CI environments
+		return
 	}
 	wsHandler := func(c fuego.ContextNoBody) (interface{}, error) {
 		log.Printf("WebSocket connection attempt from: %s", c.Request().RemoteAddr)

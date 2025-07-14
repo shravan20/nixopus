@@ -55,7 +55,7 @@ func Init() *storage.Store {
 
 	store, err := storage.NewDB(&storage_config)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	err = storage.RunMigrations(store, storage_config.MigrationsPath)
 	if err != nil {
@@ -66,9 +66,7 @@ func Init() *storage.Store {
 	if AppConfig.Port == "" {
 		AppConfig.Port = "8080"
 	}
-	if err != nil {
-		log.Fatalf("Failed to initialize postgres client: %v", err)
-	}
+	// Remove this redundant error check as err is nil here
 
 	storage := storage.NewStore(store)
 

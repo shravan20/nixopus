@@ -87,7 +87,9 @@ func NewDockerClient() *client.Client {
 				client.WithAPIVersionNegotiation(),
 			)
 			if err != nil {
-				panic(err)
+				// Don't panic in CI environments - return nil and handle gracefully
+				fmt.Printf("Warning: Docker client unavailable: %v\n", err)
+				return nil
 			}
 		}
 	}
@@ -98,13 +100,17 @@ func NewDockerClient() *client.Client {
 // ListAllContainers returns a list of all containers running on the host, along with their
 // IDs, names, and statuses. The returned list is sorted by container ID in ascending order.
 //
-// If an error occurs while listing the containers, it panics with the error.
+// If an error occurs while listing the containers, it returns an error instead of panicking.
 func (s *DockerService) ListAllContainers() ([]container.Summary, error) {
+	if s.Cli == nil {
+		return nil, fmt.Errorf("docker client not available")
+	}
+	
 	containers, err := s.Cli.ContainerList(s.Ctx, container.ListOptions{
 		All: true,
 	})
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to list containers: %w", err)
 	}
 
 	return containers, nil

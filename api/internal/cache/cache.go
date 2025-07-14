@@ -35,12 +35,23 @@ type CacheRepository interface {
 }
 
 func NewCache(redisURL string) (*Cache, error) {
+	if redisURL == "" {
+		// Return nil cache for environments without Redis
+		return nil, fmt.Errorf("redis URL not provided")
+	}
+	
 	opt, err := redis.ParseURL(redisURL)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse Redis URL: %w", err)
 	}
 
 	client := redis.NewClient(opt)
+	
+	// Test connection
+	if err := client.Ping().Err(); err != nil {
+		return nil, fmt.Errorf("failed to connect to Redis: %w", err)
+	}
+	
 	return &Cache{client: client}, nil
 }
 

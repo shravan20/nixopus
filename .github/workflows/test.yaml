@@ -39,6 +39,20 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       
+      - name: Start Docker daemon
+        run: |
+          sudo systemctl start docker
+          sudo usermod -aG docker $USER
+          # Wait for Docker to be ready
+          for i in {1..10}; do
+            if docker info > /dev/null 2>&1; then
+              echo "Docker is ready"
+              break
+            fi
+            echo "Waiting for Docker... $i"
+            sleep 2
+          done
+      
       - name: Wait for PostgreSQL
         run: |
           for i in {1..10}; do
