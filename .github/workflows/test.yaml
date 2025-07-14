@@ -71,6 +71,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y redis-server
           sudo systemctl start redis-server
+          
+      - name: Create required directories
+        run: |
+          mkdir -p /tmp/nixopus
       
       - name: Run unit tests
         env:
@@ -92,6 +96,14 @@ jobs:
           PORT: 8080
           SSL_MODE: disable
           REDIS_URL: redis://localhost:6379
+          DOCKER_HOST: unix:///var/run/docker.sock
+          MOUNT_PATH: /tmp/nixopus
+          SSH_HOST: localhost
+          SSH_PORT: 22
+          SSH_USER: runner
+          CADDY_ENDPOINT: http://localhost:2019
+          ALLOWED_ORIGIN: http://localhost:3000
+          ENV: development
         run: |
           cd api && go build -o bin/nixopus-api .
       
@@ -105,6 +117,14 @@ jobs:
           PORT: 8080
           SSL_MODE: disable
           REDIS_URL: redis://localhost:6379
+          DOCKER_HOST: unix:///var/run/docker.sock
+          MOUNT_PATH: /tmp/nixopus
+          SSH_HOST: localhost
+          SSH_PORT: 22
+          SSH_USER: runner
+          CADDY_ENDPOINT: http://localhost:2019
+          ALLOWED_ORIGIN: http://localhost:3000
+          ENV: development
         run: |
           cd api && ./bin/nixopus-api > server.log 2>&1 &
           echo $! > api_server.pid
@@ -140,8 +160,23 @@ jobs:
           DB_NAME: nixopus_test
           API_BASE_URL: http://localhost:8080
           REDIS_URL: redis://localhost:6379
+          DOCKER_HOST: unix:///var/run/docker.sock
+          MOUNT_PATH: /tmp/nixopus
+          SSH_HOST: localhost
+          SSH_PORT: 22
+          SSH_USER: runner
+          CADDY_ENDPOINT: http://localhost:2019
+          ALLOWED_ORIGIN: http://localhost:3000
+          ENV: development
         run: |
           cd api && make test-integration
+
+      - name: Show server logs on test failure
+        if: failure()
+        run: |
+          echo "=== API Server Logs ==="
+          cat api/server.log || echo "No server logs available"
+          echo "=== End API Server Logs ==="
       
       - name: Stop API server
         if: always()
@@ -150,3 +185,10 @@ jobs:
             kill $(cat api/api_server.pid) || true
             rm api/api_server.pid
           fi
+      
+      - name: Show server logs on test failure
+        if: failure()
+        run: |
+          echo "=== API Server Logs ==="
+          cat api/server.log || echo "No server logs available"
+          echo "=== End API Server Logs ==="
