@@ -2,9 +2,9 @@ name: Test Nixopus API
 
 on:
   push:
-    branches:
-      - 'master'
-      - 'feat/develop'
+    paths:
+      - 'api/**'
+  pull_request:
     paths:
       - 'api/**'
 
