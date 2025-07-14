@@ -30,7 +30,7 @@
       email: "jane.smith@example.com"
     
     - _id: ci_test_user
-      id: "test-user-id"
+      id: "{{ uuid }}"
       username: "ci_test_user"
       email: "test@example.com"
       password: "{{ hashPassword \"Test123!\" }}"
