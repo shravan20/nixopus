@@ -251,6 +251,7 @@ func (s *TestSetup) RegistrationHelper(email, password, username, orgName, orgDe
 	// Create test organization with specific ID for integration tests
 	orgID, err := uuid.Parse("0f2eaa45-9947-42b9-b057-b4a673995f53")
 	if err != nil {
+		fmt.Printf("Failed to parse organization UUID: %v\n", err)
 		return nil, nil, fmt.Errorf("failed to parse organization UUID: %w", err)
 	}
 
@@ -259,6 +260,8 @@ func (s *TestSetup) RegistrationHelper(email, password, username, orgName, orgDe
 		Name:        "test-org",
 		Description: "Test organization",
 	}
+
+	fmt.Printf("Creating organization with ID: %s\n", orgID.String())
 
 	if err := s.OrgStorage.CreateOrganization(*org); err != nil {
 		return nil, nil, fmt.Errorf("failed to create test organization: %w", err)
@@ -276,6 +279,8 @@ func (s *TestSetup) RegistrationHelper(email, password, username, orgName, orgDe
 		OrganizationID: org.ID,
 		RoleID:         adminRole.ID,
 	}
+
+	fmt.Printf("Adding user to organization %s\n", org.ID.String())
 
 	if err := s.OrgStorage.AddUserToOrganization(*orgUser); err != nil {
 		return nil, nil, fmt.Errorf("failed to add user to organization: %w", err)

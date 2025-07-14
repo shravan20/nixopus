@@ -103,6 +103,11 @@ jobs:
           SSH_USER: runner
           CADDY_ENDPOINT: http://localhost:2019
           ALLOWED_ORIGIN: http://localhost:3000
+          EMAIL_HOST: localhost
+          EMAIL_PORT: 587
+          EMAIL_USERNAME: test@example.com
+          EMAIL_PASSWORD: test
+          EMAIL_FROM: test@example.com
           ENV: development
         run: |
           cd api && go build -o bin/nixopus-api .
@@ -124,6 +129,11 @@ jobs:
           SSH_USER: runner
           CADDY_ENDPOINT: http://localhost:2019
           ALLOWED_ORIGIN: http://localhost:3000
+          EMAIL_HOST: localhost
+          EMAIL_PORT: 587
+          EMAIL_USERNAME: test@example.com
+          EMAIL_PASSWORD: test
+          EMAIL_FROM: test@example.com
           ENV: development
         run: |
           cd api && ./bin/nixopus-api > server.log 2>&1 &
@@ -167,6 +177,11 @@ jobs:
           SSH_USER: runner
           CADDY_ENDPOINT: http://localhost:2019
           ALLOWED_ORIGIN: http://localhost:3000
+          EMAIL_HOST: localhost
+          EMAIL_PORT: 587
+          EMAIL_USERNAME: test@example.com
+          EMAIL_PASSWORD: test
+          EMAIL_FROM: test@example.com
           ENV: development
         run: |
           cd api && make test-integration
