@@ -20,9 +20,10 @@ var (
 // users table exists in the database. If the table does not exist, it creates it.
 // Finally, it sets a default value of "8080" for AppConfig.Port if it is empty.
 func Init() *storage.Store {
+	// Load .env file if it exists (optional for CI/production)
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Printf("Warning: Could not load .env file: %v", err)
 	}
 
 	AppConfig = types.Config{

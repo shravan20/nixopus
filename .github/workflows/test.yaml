@@ -96,8 +96,11 @@ jobs:
           SSL_MODE: disable
           REDIS_URL: redis://localhost:6379
         run: |
-          cd api && ./bin/nixopus-api &
+          cd api && ./bin/nixopus-api > server.log 2>&1 &
           echo $! > api_server.pid
+          sleep 2
+          echo "Server logs:"
+          cat server.log || echo "No logs yet"
       
       - name: Wait for API server to be ready
         run: |
@@ -107,9 +110,15 @@ jobs:
               exit 0
             fi
             echo "Waiting for API server... $i"
+            if [ $i -eq 10 ] || [ $i -eq 20 ]; then
+              echo "Server logs at attempt $i:"
+              cat api/server.log || echo "No logs available"
+            fi
             sleep 2
           done
           echo "API server failed to start"
+          echo "Final server logs:"
+          cat api/server.log || echo "No logs available"
           exit 1
       
       - name: Run integration tests

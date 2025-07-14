@@ -14,9 +14,10 @@ import (
 )
 
 func main() {
+	// Load .env file if it exists (optional for CI/production)
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Printf("Warning: Could not load .env file: %v", err)
 	}
 
 	store := config.Init()
