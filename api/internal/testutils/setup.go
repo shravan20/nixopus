@@ -248,9 +248,14 @@ func (s *TestSetup) RegistrationHelper(email, password, username, orgName, orgDe
 		return nil, nil, fmt.Errorf("failed to create test user: %w", err)
 	}
 
-	// Create test organization
+	// Create test organization with specific ID for integration tests
+	orgID, err := uuid.Parse("0f2eaa45-9947-42b9-b057-b4a673995f53")
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to parse organization UUID: %w", err)
+	}
+
 	org := &types.Organization{
-		ID:          uuid.New(),
+		ID:          orgID,
 		Name:        "test-org",
 		Description: "Test organization",
 	}

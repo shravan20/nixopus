@@ -14,10 +14,3 @@
       created_at: "{{ now }}"
       updated_at: "{{ now }}"
 
-    - _id: ci_test_org
-      id: "0f2eaa45-9947-42b9-b057-b4a673995f53"
-      name: "Test Organization"
-      description: "Organization for CI integration tests"
-      created_at: "{{ now }}"
-      updated_at: "{{ now }}"
-

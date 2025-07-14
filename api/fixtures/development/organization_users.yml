@@ -22,12 +22,4 @@
       organization_id: "{{ $.Organization.demo_org.ID }}"
       role_id: "{{ $.Role.admin.ID }}"
       created_at: "{{ now }}"
-      updated_at: "{{ now }}" 
-
-    - _id: ci_test_user_org
-      id: "{{ uuid }}"
-      user_id: "{{ $.User.ci_test_user.ID }}"
-      organization_id: "0f2eaa45-9947-42b9-b057-b4a673995f53"
-      role_id: "{{ $.Role.admin.ID }}"
-      created_at: "{{ now }}"
       updated_at: "{{ now }}"

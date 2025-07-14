@@ -28,12 +28,7 @@
       id: "{{ uuid }}"
       username: "jane_smith"
       email: "jane.smith@example.com"
-    
-    - _id: ci_test_user
-      id: "{{ uuid }}"
-      username: "ci_test_user"
-      email: "test@example.com"
-      password: "{{ hashPassword \"Test123!\" }}"
+      password: "{{ hashPassword \"Password123!\" }}"
       avatar: ""
       created_at: "{{ now }}"
       updated_at: "{{ now }}"
