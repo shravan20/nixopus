@@ -1,8 +1,12 @@
-import typer
 import subprocess
+
+import typer
+
 from app.utils.config import Config
 from app.utils.logger import Logger
+
 from .messages import development_only_error, running_command
+
 
 class TestCommand:
     def __init__(self):
@@ -16,6 +20,6 @@ class TestCommand:
         cmd = ["make", "test"]
         if target:
             cmd.append(f"test-{target}")
-        self.logger.info(running_command.format(command=' '.join(cmd)))
+        self.logger.info(running_command.format(command=" ".join(cmd)))
         result = subprocess.run(cmd)
-        raise typer.Exit(result.returncode) 
+        raise typer.Exit(result.returncode)

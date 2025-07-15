@@ -1,13 +1,13 @@
 import typer
-from .run import Install
-from .clone import Clone, CloneConfig
-from .ssh import SSH, SSHConfig
+
 from app.utils.logger import Logger
 
-install_app = typer.Typer(
-    help="Install Nixopus",
-    invoke_without_command=True
-)
+from .clone import Clone, CloneConfig
+from .run import Install
+from .ssh import SSH, SSHConfig
+
+install_app = typer.Typer(help="Install Nixopus", invoke_without_command=True)
+
 
 @install_app.callback()
 def install_callback(ctx: typer.Context):
@@ -16,11 +16,13 @@ def install_callback(ctx: typer.Context):
         install = Install()
         install.run()
 
+
 def main_install_callback(value: bool):
     if value:
         install = Install()
         install.run()
         raise typer.Exit()
+
 
 @install_app.command()
 def clone(
@@ -35,21 +37,14 @@ def clone(
     """Clone a repository"""
     try:
         logger = Logger(verbose=verbose)
-        config = CloneConfig(
-        repo=repo,
-        branch=branch,
-        path=path,
-        force=force,
-        verbose=verbose,
-        output=output,
-        dry_run=dry_run
-    )
+        config = CloneConfig(repo=repo, branch=branch, path=path, force=force, verbose=verbose, output=output, dry_run=dry_run)
         clone_operation = Clone(logger=logger)
         result = clone_operation.clone(config)
         logger.success(result.output)
     except Exception as e:
         logger.error(e)
         raise typer.Exit(1)
+
 
 def ssh(
     path: str = typer.Option("~/.ssh/nixopus_ed25519", "--path", "-p", help="The SSH key path to generate"),
@@ -61,8 +56,12 @@ def ssh(
     dry_run: bool = typer.Option(False, "--dry-run", "-d", help="Dry run"),
     force: bool = typer.Option(False, "--force", "-f", help="Force overwrite existing SSH key"),
     set_permissions: bool = typer.Option(True, "--set-permissions", "-S", help="Set proper file permissions"),
-    add_to_authorized_keys: bool = typer.Option(False, "--add-to-authorized-keys", "-a", help="Add public key to authorized_keys"),
-    create_ssh_directory: bool = typer.Option(True, "--create-ssh-directory", "-c", help="Create .ssh directory if it doesn't exist"),
+    add_to_authorized_keys: bool = typer.Option(
+        False, "--add-to-authorized-keys", "-a", help="Add public key to authorized_keys"
+    ),
+    create_ssh_directory: bool = typer.Option(
+        True, "--create-ssh-directory", "-c", help="Create .ssh directory if it doesn't exist"
+    ),
 ):
     """Generate an SSH key pair with proper permissions and optional authorized_keys integration"""
     try:
@@ -78,7 +77,7 @@ def ssh(
             force=force,
             set_permissions=set_permissions,
             add_to_authorized_keys=add_to_authorized_keys,
-            create_ssh_directory=create_ssh_directory
+            create_ssh_directory=create_ssh_directory,
         )
         ssh_operation = SSH(logger=logger)
         result = ssh_operation.generate(config)

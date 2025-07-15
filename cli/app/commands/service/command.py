@@ -1,13 +1,14 @@
 import typer
+
 from app.utils.logger import Logger
-from .up import Up, UpConfig
+
 from .down import Down, DownConfig
 from .ps import Ps, PsConfig
 from .restart import Restart, RestartConfig
+from .up import Up, UpConfig
 
-service_app = typer.Typer(
-    help="Manage Nixopus services"
-)
+service_app = typer.Typer(help="Manage Nixopus services")
+
 
 @service_app.command()
 def up(
@@ -21,7 +22,7 @@ def up(
 ):
     """Start Nixopus services"""
     logger = Logger(verbose=verbose)
-    
+
     try:
         config = UpConfig(
             name=name,
@@ -30,21 +31,22 @@ def up(
             verbose=verbose,
             output=output,
             dry_run=dry_run,
-            compose_file=compose_file
+            compose_file=compose_file,
         )
-        
+
         up_service = Up(logger=logger)
         result = up_service.up(config)
-        
+
         if result.success:
             logger.success(up_service.format_output(result, output))
         else:
             logger.error(result.error)
             raise typer.Exit(1)
-            
+
     except Exception as e:
         logger.error(str(e))
         raise typer.Exit(1)
+
 
 @service_app.command()
 def down(
@@ -57,29 +59,25 @@ def down(
 ):
     """Stop Nixopus services"""
     logger = Logger(verbose=verbose)
-    
-    try:        
+
+    try:
         config = DownConfig(
-            name=name,
-            env_file=env_file,
-            verbose=verbose,
-            output=output,
-            dry_run=dry_run,
-            compose_file=compose_file
+            name=name, env_file=env_file, verbose=verbose, output=output, dry_run=dry_run, compose_file=compose_file
         )
-        
+
         down_service = Down(logger=logger)
         result = down_service.down(config)
-        
+
         if result.success:
             logger.success(down_service.format_output(result, output))
         else:
             logger.error(result.error)
             raise typer.Exit(1)
-            
+
     except Exception as e:
         logger.error(str(e))
         raise typer.Exit(1)
+
 
 @service_app.command()
 def ps(
@@ -92,29 +90,25 @@ def ps(
 ):
     """Show status of Nixopus services"""
     logger = Logger(verbose=verbose)
-    
+
     try:
         config = PsConfig(
-            name=name,
-            env_file=env_file,
-            verbose=verbose,
-            output=output,
-            dry_run=dry_run,
-            compose_file=compose_file
+            name=name, env_file=env_file, verbose=verbose, output=output, dry_run=dry_run, compose_file=compose_file
         )
-        
+
         ps_service = Ps(logger=logger)
         result = ps_service.ps(config)
-        
+
         if result.success:
             logger.success(ps_service.format_output(result, output))
         else:
             logger.error(result.error)
             raise typer.Exit(1)
-            
+
     except Exception as e:
         logger.error(str(e))
         raise typer.Exit(1)
+
 
 @service_app.command()
 def restart(
@@ -127,26 +121,21 @@ def restart(
 ):
     """Restart Nixopus services"""
     logger = Logger(verbose=verbose)
-    
+
     try:
         config = RestartConfig(
-            name=name,
-            env_file=env_file,
-            verbose=verbose,
-            output=output,
-            dry_run=dry_run,
-            compose_file=compose_file
+            name=name, env_file=env_file, verbose=verbose, output=output, dry_run=dry_run, compose_file=compose_file
         )
-        
+
         restart_service = Restart(logger=logger)
         result = restart_service.restart(config)
-        
+
         if result.success:
             logger.success(restart_service.format_output(result, output))
         else:
             logger.error(result.error)
             raise typer.Exit(1)
-            
+
     except Exception as e:
         logger.error(str(e))
         raise typer.Exit(1)

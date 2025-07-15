@@ -1,18 +1,20 @@
 import typer
-from app.commands.version.command import version_app, main_version_callback
-from app.commands.preflight.command import preflight_app
-from app.commands.test.command import test_app
-from app.commands.install.command import install_app
-from app.commands.service.command import service_app
+
 from app.commands.conf.command import conf_app
+from app.commands.install.command import install_app
+from app.commands.preflight.command import preflight_app
 from app.commands.proxy.command import proxy_app
-from app.utils.message import application_name, application_description, application_add_completion, application_version_help
+from app.commands.service.command import service_app
+from app.commands.test.command import test_app
+from app.commands.version.command import main_version_callback, version_app
+from app.utils.message import application_add_completion, application_description, application_name, application_version_help
 
 app = typer.Typer(
     name=application_name,
     help=application_description,
     add_completion=application_add_completion,
 )
+
 
 @app.callback()
 def main(
@@ -22,9 +24,10 @@ def main(
         "-v",
         callback=main_version_callback,
         help=application_version_help,
-    )   
+    )
 ):
     pass
+
 
 app.add_typer(preflight_app, name="preflight")
 app.add_typer(conf_app, name="conf")

@@ -1,6 +1,9 @@
-import pytest
 from typing import List
-from app.commands.preflight.port import PortConfig, PortCheckResult, PortService
+
+import pytest
+
+from app.commands.preflight.port import PortCheckResult, PortConfig, PortService
+
 
 class TestPort:
     def test_valid_ports(self):
@@ -71,28 +74,24 @@ class TestPort:
         assert all(result["error"] is None for result in results)
         assert all(result["is_available"] is True for result in results)
 
+
 def test_port_check_result_type():
     """Test that PortCheckResult has correct structure"""
-    result: PortCheckResult = {
-        "port": 8080,
-        "status": "available",
-        "host": "localhost",
-        "error": None,
-        "is_available": True
-    }
-    
+    result: PortCheckResult = {"port": 8080, "status": "available", "host": "localhost", "error": None, "is_available": True}
+
     assert isinstance(result["port"], int)
     assert isinstance(result["status"], str)
     assert isinstance(result["host"], str) or result["host"] is None
     assert isinstance(result["error"], str) or result["error"] is None
     assert isinstance(result["is_available"], bool)
 
+
 def test_check_ports_return_type():
     """Test that check_ports returns correct type"""
     config = PortConfig(ports=[8080, 3000], host="localhost", timeout=1, verbose=False)
     port_service = PortService(config)
     results: List[PortCheckResult] = port_service.check_ports()
-    
+
     assert isinstance(results, list)
     for result in results:
         assert isinstance(result, dict)

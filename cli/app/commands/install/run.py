@@ -1,5 +1,7 @@
 from app.utils.protocols import LoggerProtocol
+
 from .messages import installing_nixopus
+
 
 class Install:
     def __init__(self, logger: LoggerProtocol):

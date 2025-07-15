@@ -1,5 +1,7 @@
 import typer
-from .message import INFO_MESSAGE, DEBUG_MESSAGE, WARNING_MESSAGE, ERROR_MESSAGE, SUCCESS_MESSAGE, HIGHLIGHT_MESSAGE
+
+from .message import DEBUG_MESSAGE, ERROR_MESSAGE, HIGHLIGHT_MESSAGE, INFO_MESSAGE, SUCCESS_MESSAGE, WARNING_MESSAGE
+
 
 class Logger:
     """Wrapper for typer.secho to log messages to the console"""

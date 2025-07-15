@@ -38,4 +38,4 @@ debug_stop_proxy = "Stopping Caddy proxy on port: {port}"
 # Info messages
 info_caddy_running = "Caddy is running"
 info_config_loaded = "Configuration loaded successfully"
-info_caddy_stopped = "Caddy stopped successfully" 
+info_caddy_stopped = "Caddy stopped successfully"

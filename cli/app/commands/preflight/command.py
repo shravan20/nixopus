@@ -1,17 +1,21 @@
 import typer
-from .messages import error_checking_deps, error_checking_ports
-from .port import PortConfig, PortService
-from .deps import Deps, DepsConfig
+
 from app.utils.lib import HostInformation
 from app.utils.logger import Logger
 
+from .deps import Deps, DepsConfig
+from .messages import error_checking_deps, error_checking_ports
+from .port import PortConfig, PortService
+
 preflight_app = typer.Typer(no_args_is_help=False)
+
 
 @preflight_app.callback(invoke_without_command=True)
 def preflight_callback(ctx: typer.Context):
     """Preflight checks for system compatibility"""
     if ctx.invoked_subcommand is None:
         ctx.invoke(check)
+
 
 @preflight_app.command()
 def check(
@@ -20,6 +24,7 @@ def check(
 ):
     """Run all preflight checks"""
     pass
+
 
 @preflight_app.command()
 def ports(
@@ -41,7 +46,8 @@ def ports(
         logger.error(error_checking_ports.format(error=e))
         raise typer.Exit(1)
 
-@preflight_app.command()    
+
+@preflight_app.command()
 def deps(
     deps: list[str] = typer.Argument(..., help="The list of dependencies to check"),
     timeout: int = typer.Option(1, "--timeout", "-t", help="The timeout in seconds for each dependency check"),
@@ -50,14 +56,14 @@ def deps(
 ) -> None:
     """Check if list of dependencies are available on the system"""
     try:
-        logger = Logger(verbose=verbose)      
+        logger = Logger(verbose=verbose)
         config = DepsConfig(
             deps=deps,
             timeout=timeout,
             verbose=verbose,
             output=output,
             os=HostInformation.get_os_name(),
-            package_manager=HostInformation.get_package_manager()
+            package_manager=HostInformation.get_package_manager(),
         )
         deps_checker = Deps(logger=logger)
         results = deps_checker.check(config)
