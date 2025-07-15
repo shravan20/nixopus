@@ -97,3 +97,39 @@ func GetFeatureFlagsURL() string {
 func GetFeatureFlagCheckURL() string {
 	return baseURL + "/feature-flags/check"
 }
+
+func GetDeployApplicationURL() string {
+	return baseURL + "/deploy/application"
+}
+
+func GetDeployApplicationsURL() string {
+	return baseURL + "/deploy/applications"
+}
+
+func GetDeployApplicationRedeployURL() string {
+	return baseURL + "/deploy/application/redeploy"
+}
+
+func GetDeployApplicationRestartURL() string {
+	return baseURL + "/deploy/application/restart"
+}
+
+func GetDeployApplicationRollbackURL() string {
+	return baseURL + "/deploy/application/rollback"
+}
+
+func GetDeployApplicationDeploymentsURL() string {
+	return baseURL + "/deploy/application/deployments"
+}
+
+func GetDeployApplicationDeploymentByIDURL(deploymentID string) string {
+	return baseURL + "/deploy/application/deployments/" + deploymentID
+}
+
+func GetDeployApplicationDeploymentLogsURL(deploymentID string) string {
+	return baseURL + "/deploy/application/deployments/" + deploymentID + "/logs"
+}
+
+func GetDeployApplicationLogsURL(applicationID string) string {
+	return baseURL + "/deploy/application/logs/" + applicationID
+}
