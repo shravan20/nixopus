@@ -92,7 +92,7 @@ class TestBaseEnvironmentManager:
 
             assert success is False
             assert backup_path is None
-            assert "Failed to create backup" in error
+            assert "Backup creation failed" in error
 
     @patch("os.path.exists")
     def test_restore_backup_success(self, mock_exists):
@@ -239,7 +239,7 @@ class TestBaseEnvironmentManager:
         success, error = self.manager.write_env_file("/path/to/.env", config)
 
         assert success is False
-        assert "Failed to create backup" in error
+        assert "Backup creation failed" in error
 
     @patch("os.path.exists")
     @patch("shutil.copy2")
