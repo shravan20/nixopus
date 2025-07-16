@@ -44,7 +44,7 @@ def delete(
     service: str = typer.Option(
         "api", "--service", "-s", help="The name of the service to delete configuration for, e.g api,view"
     ),
-    key: str = typer.Option(None, "--key", "-k", help="The key of the configuration to delete"),
+    key: str = typer.Argument(..., help="The key of the configuration to delete"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
     output: str = typer.Option("text", "--output", "-o", help="Output format, text, json"),
     dry_run: bool = typer.Option(False, "--dry-run", "-d", help="Dry run"),
@@ -75,8 +75,7 @@ def set(
     service: str = typer.Option(
         "api", "--service", "-s", help="The name of the service to set configuration for, e.g api,view"
     ),
-    key: str = typer.Option(None, "--key", "-k", help="The key of the configuration to set"),
-    value: str = typer.Option(None, "--value", "-v", help="The value of the configuration to set"),
+    key_value: str = typer.Argument(..., help="Configuration in the form KEY=VALUE"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
     output: str = typer.Option("text", "--output", "-o", help="Output format, text, json"),
     dry_run: bool = typer.Option(False, "--dry-run", "-d", help="Dry run"),
@@ -86,6 +85,11 @@ def set(
     logger = Logger(verbose=verbose)
 
     try:
+        if "=" not in key_value:
+            logger.error("Argument must be in the form KEY=VALUE")
+            raise typer.Exit(1)
+        key, value = key_value.split("=", 1)
+
         config = SetConfig(
             service=service, key=key, value=value, verbose=verbose, output=output, dry_run=dry_run, env_file=env_file
         )
