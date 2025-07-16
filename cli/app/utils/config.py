@@ -45,3 +45,13 @@ def expand_env_placeholders(value: str) -> str:
 
 VIEW_ENV_FILE = "services.view.env.VIEW_ENV_FILE"
 API_ENV_FILE = "services.api.env.API_ENV_FILE"
+DEFAULT_REPO = "clone.repo"
+DEFAULT_BRANCH = "clone.branch"
+DEFAULT_PATH = "clone.source-path"
+DEFAULT_COMPOSE_FILE = "compose-file-path"
+NIXOPUS_CONFIG_DIR = "nixopus-config-dir"
+PROXY_PORT = "services.caddy.env.PROXY_PORT"
+CADDY_BASE_URL = "services.caddy.env.BASE_URL"
+CONFIG_ENDPOINT = "services.caddy.env.CONFIG_ENDPOINT"
+LOAD_ENDPOINT = "services.caddy.env.LOAD_ENDPOINT"
+STOP_ENDPOINT = "services.caddy.env.STOP_ENDPOINT"
