@@ -4,6 +4,7 @@ from app.utils.logger import Logger
 
 from .delete import Delete, DeleteConfig
 from .list import List, ListConfig
+from .messages import argument_must_be_in_form
 from .set import Set, SetConfig
 
 conf_app = typer.Typer(help="Manage configuration")
@@ -86,7 +87,7 @@ def set(
 
     try:
         if "=" not in key_value:
-            logger.error("Argument must be in the form KEY=VALUE")
+            logger.error(argument_must_be_in_form)
             raise typer.Exit(1)
         key, value = key_value.split("=", 1)
 

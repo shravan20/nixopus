@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from app.utils.logger import Logger
 from app.utils.protocols import LoggerProtocol
+from app.utils.config import Config, API_ENV_FILE, VIEW_ENV_FILE
 
 from .messages import (
     atomic_complete,
@@ -223,12 +224,13 @@ class BaseEnvironmentManager:
             self.logger.debug(using_provided_env.format(env_file=env_file))
             return env_file
 
+        config = Config()
         if service == "api":
-            default_path = "/etc/nixopus/source/api/.env"
+            default_path = config.get_yaml_value(API_ENV_FILE)
             self.logger.debug(using_default_api.format(path=default_path))
             return default_path
         elif service == "view":
-            default_path = "/etc/nixopus/source/view/.env"
+            default_path = config.get_yaml_value(VIEW_ENV_FILE)
             self.logger.debug(using_default_view.format(path=default_path))
             return default_path
         else:
