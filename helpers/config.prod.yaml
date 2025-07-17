@@ -91,7 +91,6 @@ deps:
   air: { version: "" }
   python: { version: "" }
   poetry: { version: "" }
-  redis: { version: "" }
   docker: { version: "" }
   open-ssh: { version: "" }
   open-sshserver: { version: "" }
