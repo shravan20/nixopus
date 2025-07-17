@@ -64,6 +64,7 @@ def ssh(
         logger.error(e)
         raise typer.Exit(1)
 
+@install_app.command(name="deps")
 def deps(
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
     output: str = typer.Option("text", "--output", "-o", help="Output format, text, json"),
