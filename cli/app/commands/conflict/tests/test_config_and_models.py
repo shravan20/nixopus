@@ -18,7 +18,7 @@ class TestConfigAndModels(unittest.TestCase):
     def setUp(self):
         self.logger = Logger(verbose=False)
         self.config = ConflictConfig(
-            config_file="test_config.yaml", environment="production", timeout=1, verbose=False, output="text"
+            config_file="test_config.yaml", timeout=1, verbose=False, output="text"
         )
 
     def test_conflict_check_result_creation(self):
@@ -79,11 +79,10 @@ class TestConfigAndModels(unittest.TestCase):
             temp_path = f.name
 
         try:
-            config = ConflictConfig(config_file=temp_path, environment="production", timeout=1, verbose=False, output="text")
+            config = ConflictConfig(config_file=temp_path, timeout=1, verbose=False, output="text")
             
             # Test that config is created successfully even with empty deps
             self.assertEqual(config.config_file, temp_path)
-            self.assertEqual(config.environment, "production")
             self.assertEqual(config.timeout, 1)
             self.assertFalse(config.verbose)
             self.assertEqual(config.output, "text")

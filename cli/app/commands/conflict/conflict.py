@@ -341,23 +341,21 @@ class ConflictFormatter:
     def __init__(self):
         self.output_formatter = OutputFormatter()
 
-    def format_output(self, results: List[ConflictCheckResult], output_type: str) -> str:
+    def format_output(self, data: List[ConflictCheckResult], output_type: str) -> str:
         """Format conflict check results."""
-        if not results:
-            return self.output_formatter.format_output(
-                self.output_formatter.create_success_message("No version conflicts to check"),
-                output_type
-            )
+        if not data:
+            message = self.output_formatter.create_success_message("No version conflicts to check")
+            return self.output_formatter.format_output(message, output_type)
 
         messages = []
-        for result in results:
-            data = result.model_dump()
+        for result in data:
+            data_dict = result.model_dump()
             message = self._format_single_result(result)
             
             if result.conflict:
-                messages.append(self.output_formatter.create_error_message(message, data))
+                messages.append(self.output_formatter.create_error_message(message, data_dict))
             else:
-                messages.append(self.output_formatter.create_success_message(message, data))
+                messages.append(self.output_formatter.create_success_message(message, data_dict))
 
         return self.output_formatter.format_output(messages, output_type)
 
@@ -386,7 +384,8 @@ class ConflictService:
         self.logger.debug("Starting version conflict checks")
         return self.checker.check_conflicts()
 
-    def check_and_format(self) -> str:
+    def check_and_format(self, output_type: Optional[str] = None) -> str:
         """Check conflicts and return formatted output."""
         results = self.check_conflicts()
-        return self.formatter.format_output(results, self.config.output)
+        output_format = output_type or self.config.output
+        return self.formatter.format_output(results, output_format)

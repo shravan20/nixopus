@@ -15,7 +15,7 @@ class TestVersionChecker(unittest.TestCase):
     def setUp(self):
         self.logger = Logger(verbose=False)
         self.config = ConflictConfig(
-            config_file="test_config.yaml", environment="production", timeout=1, verbose=False, output="text"
+            config_file="test_config.yaml", timeout=1, verbose=False, output="text"
         )
 
     @patch("subprocess.run")
@@ -94,7 +94,7 @@ class TestVersionChecker(unittest.TestCase):
             temp_path = f.name
 
         try:
-            config = ConflictConfig(config_file=temp_path, environment="production", timeout=1, verbose=False, output="text")
+            config = ConflictConfig(config_file=temp_path, timeout=1, verbose=False, output="text")
 
             checker = ConflictChecker(config, self.logger)
 
