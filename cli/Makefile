@@ -1,23 +1,16 @@
-.PHONY: help setup install test test-cov lint clean format check build publish dev nixopus
+.PHONY: help setup test test-cov lint clean format check build publish dev nixopus
 
 help: ## Show available commands
-	@echo "Available commands:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-setup: ## Setup Python environment using Poetry
-	@echo "Setting up Python environment using Poetry..."
+setup: ## Setup Python environment and install dependencies
 	@if command -v poetry >/dev/null 2>&1; then \
 		poetry install --with dev; \
-		echo "Environment setup complete!"; \
-		echo "To run nixopus locally, use: make nixopus ARGS=\"command\""; \
+		echo "Environment ready! Use: make nixopus ARGS=\"command\""; \
 	else \
-		echo "Poetry not found. Please install Poetry first:"; \
-		echo "curl -sSL https://install.python-poetry.org | python3 -"; \
+		echo "Poetry not found. Install: curl -sSL https://install.python-poetry.org | python3 -"; \
 		exit 1; \
 	fi
-
-install: ## Install dependencies
-	poetry install --with dev
 
 test: ## Run tests
 	poetry run pytest
@@ -34,8 +27,7 @@ format: ## Format code
 	poetry run isort .
 
 check: ## Run linting and tests
-	$(MAKE) lint
-	$(MAKE) test
+	$(MAKE) lint && $(MAKE) test
 
 clean: ## Clean build artifacts
 	rm -rf build/ dist/ *.egg-info/ .pytest_cache/ htmlcov/ .coverage
@@ -51,14 +43,13 @@ publish: ## Publish to PyPI
 dev: ## Activate development shell
 	poetry shell
 
-nixopus: ## Run nixopus CLI (usage: make nixopus ARGS="command options")
+nixopus: ## Run nixopus CLI
 	@if [ -z "$(ARGS)" ]; then \
 		poetry run nixopus --help; \
 	else \
 		poetry run nixopus $(ARGS); \
 	fi
 
-# Convenience targets for common commands
 conflict: ## Run conflict command
 	poetry run nixopus conflict $(ARGS)
 
