@@ -71,14 +71,15 @@ services:
       CONFIG_ENDPOINT: ${CONFIG_ENDPOINT:-/config}
       LOAD_ENDPOINT: ${LOAD_ENDPOINT:-/load}
       STOP_ENDPOINT: ${STOP_ENDPOINT:-/stop}
-      CADDY_COMMAND: [
-        "caddy",
-        "run",
-        "--config",
-        "/etc/caddy/Caddyfile",
-        "--adapter",
-        "caddyfile"
-      ]
+      CADDY_COMMAND:
+        [
+          "caddy",
+          "run",
+          "--config",
+          "/etc/caddy/Caddyfile",
+          "--adapter",
+          "caddyfile"
+        ]
 
 networks:
   default:
@@ -86,18 +87,18 @@ networks:
     driver: bridge
 
 deps:
-  curl: { version: "1" }
-  go: { version: "1" }
-  air: { version: "" }
-  python: { version: "" }
-  poetry: { version: "" }
-  redis: { version: "" }
-  docker: { version: "" }
-  open-ssh: { version: "" }
-  open-sshserver: { version: "" }
-  git: { version: "" }
-  openssl: { version: "" }
-  python3-venv: { version: "" }
+  curl: { version: ">=7.80.0, <8.0.0" }
+  go: { version: ">=1.22.0, <1.24.0" }
+  air: { version: ">=1.45.0, <2.0.0" }
+  python: { version: ">=3.8, <3.13" }
+  poetry: { version: ">=1.2.0, <2.0.0" }
+  redis: { version: ">=7.0, <8.0" }
+  docker: { version: ">=20.10.0, <26.0.0" }
+  open-ssh: { version: ">=8.0, <10.0" }
+  open-sshserver: { version: ">=8.0, <10.0" }
+  git: { version: ">=2.30.0, <3.0.0" }
+  openssl: { version: ">=1.1.1, <4.0.0" }
+  python3-venv: { version: ">=3.8, <3.13" }
 
 nixopus-config-dir: /etc/nixopus
 compose-file-path: docker-compose.yml
