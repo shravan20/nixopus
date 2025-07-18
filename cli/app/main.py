@@ -8,7 +8,9 @@ from app.commands.proxy.command import proxy_app
 from app.commands.service.command import service_app
 from app.commands.test.command import test_app
 from app.commands.version.command import main_version_callback, version_app
+from app.commands.conflict.command import conflict_app
 from app.utils.message import application_add_completion, application_description, application_name, application_version_help
+
 
 app = typer.Typer(
     name=application_name,
@@ -32,6 +34,7 @@ def main(
 
 app.add_typer(preflight_app, name="preflight")
 app.add_typer(clone_app, name="clone")
+app.add_typer(conflict_app, name="conflict")
 app.add_typer(conf_app, name="conf")
 app.add_typer(service_app, name="service")
 app.add_typer(proxy_app, name="proxy")
