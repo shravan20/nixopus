@@ -6,8 +6,9 @@ import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
 from typing import Callable, List, Optional, Tuple, TypeVar
+import requests
 
-from app.utils.message import FAILED_TO_REMOVE_DIRECTORY_MESSAGE, REMOVED_DIRECTORY_MESSAGE
+from app.utils.message import FAILED_TO_GET_PUBLIC_IP_MESSAGE, FAILED_TO_REMOVE_DIRECTORY_MESSAGE, REMOVED_DIRECTORY_MESSAGE
 
 T = TypeVar("T")
 R = TypeVar("R")
@@ -84,6 +85,15 @@ class HostInformation:
             return result.returncode == 0
         except Exception:
             return False
+    
+    @staticmethod
+    def get_public_ip():
+        try:
+            response = requests.get('https://api.ipify.org', timeout=10)
+            response.raise_for_status()  # fail on non-2xx
+            return response.text.strip()
+        except requests.RequestException:
+            raise Exception(FAILED_TO_GET_PUBLIC_IP_MESSAGE)
 
 
 class ParallelProcessor:
