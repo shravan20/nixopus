@@ -98,7 +98,8 @@ def list(
     except Exception as e:
         logger.debug(debug_exception_caught.format(error_type=type(e).__name__, error=str(e)))
         logger.debug(debug_exception_details.format(error=e))
-        logger.error(str(e))
+        if not isinstance(e, typer.Exit):
+            logger.error(str(e))
         raise typer.Exit(1)
 
 
@@ -164,7 +165,8 @@ def delete(
     except Exception as e:
         logger.debug(debug_exception_caught.format(error_type=type(e).__name__, error=str(e)))
         logger.debug(debug_exception_details.format(error=e))
-        logger.error(str(e))
+        if not isinstance(e, typer.Exit):
+            logger.error(str(e))
         raise typer.Exit(1)
 
 
@@ -240,5 +242,6 @@ def set(
     except Exception as e:
         logger.debug(debug_exception_caught.format(error_type=type(e).__name__, error=str(e)))
         logger.debug(debug_exception_details.format(error=e))
-        logger.error(str(e))
+        if not isinstance(e, typer.Exit):
+            logger.error(str(e))
         raise typer.Exit(1)

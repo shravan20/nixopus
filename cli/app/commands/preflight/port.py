@@ -57,19 +57,47 @@ class PortFormatter:
 
     def format_output(self, data: Union[str, List[PortCheckResult], Any], output_type: str) -> str:
         if isinstance(data, list):
-            messages = []
-            for item in data:
+            if len(data) == 1 and output_type == "text":
+                item = data[0]
+                message = f"Port {item['port']}: {item['status']}"
                 if item.get("is_available", False):
-                    message = f"Port {item['port']}: {item['status']}"
-                    data = {"port": item['port'], "status": item['status'], "is_available": item['is_available']}
-                    messages.append(self.output_formatter.create_success_message(message, data))
+                    return self.output_formatter.create_success_message(message).message
                 else:
-                    error = f"Port {item['port']}: {item['status']}"
-                    data = {"port": item['port'], "status": item['status'], "is_available": item['is_available']}
+                    return f"Error: {message}"
+            
+            if output_type == "text":
+                table_data = []
+                for item in data:
+                    row = {
+                        "Port": str(item['port']),
+                        "Status": item['status']
+                    }
+                    if item.get('host') and item['host'] != "localhost":
+                        row["Host"] = item['host']
                     if item.get('error'):
-                        data['error'] = item['error']
-                    messages.append(self.output_formatter.create_error_message(error, data))
-            return self.output_formatter.format_output(messages, output_type)
+                        row["Error"] = item['error']
+                    table_data.append(row)
+                
+                return self.output_formatter.create_table(
+                    table_data,
+                    title="Port Check Results",
+                    show_header=True,
+                    show_lines=True
+                )
+            else:
+                json_data = []
+                for item in data:
+                    port_data = {
+                        "port": item['port'],
+                        "status": item['status'],
+                        "is_available": item.get('is_available', False)
+                    }
+                    if item.get('host'):
+                        port_data["host"] = item['host']
+                    if item.get('error'):
+                        port_data["error"] = item['error']
+                    json_data.append(port_data)
+                return self.output_formatter.format_json(json_data)
         else:
             return str(data)
 
@@ -103,7 +131,7 @@ class PortChecker:
         return {
             "port": port,
             "status": status,
-            "host": config.host if config.verbose else None,
+            "host": config.host if config.host != "localhost" else None,
             "error": error,
             "is_available": status == available,
         }
