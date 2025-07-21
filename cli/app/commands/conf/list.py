@@ -99,11 +99,7 @@ class ListService(BaseService[ListConfig, ListResult]):
                 self.logger.debug(debug_config_listed.format(count=len(config_dict)))
             else:
                 self.logger.debug(debug_no_config_to_list)
-            
-<<<<<<< HEAD
-=======
             self.logger.info(configuration_listed.format(service=self.config.service))
->>>>>>> feat/cli
             return self._create_result(True, config_dict=config_dict)
         else:
             self.logger.error(configuration_list_failed.format(service=self.config.service, error=error))
@@ -126,12 +122,10 @@ class ListService(BaseService[ListConfig, ListResult]):
         return "\n".join(lines)
 
     def _format_output(self, result: ListResult, output_format: str) -> str:
-<<<<<<< HEAD
-=======
         if output_format == "json":
             formatted = self._format_json(result)
         else:
-            formatted = self._format_text(result)
+            formatted = self._format_text(result, output_format)
         
         return formatted
 
@@ -141,8 +135,7 @@ class ListService(BaseService[ListConfig, ListResult]):
         output = {"service": result.service, "success": result.success, "error": result.error, "config": result.config}
         return json.dumps(output, indent=2)
 
-    def _format_text(self, result: ListResult) -> str:
->>>>>>> feat/cli
+    def _format_text(self, result: ListResult, output_format: str) -> str:
         if not result.success:
             return configuration_list_failed.format(service=result.service, error=result.error)
 
@@ -159,13 +152,6 @@ class ListService(BaseService[ListConfig, ListResult]):
                 headers=headers
             )
         else:   
-            if output_format == "json":
-                return self.formatter.format_json({
-                    "service": result.service,
-                    "success": result.success,
-                    "message": no_configuration_found.format(service=result.service),
-                    "config": {}
-                })
             return no_configuration_found.format(service=result.service)
 
 
