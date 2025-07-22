@@ -17,7 +17,7 @@ services:
       SSH_PASSWORD: ${SSH_PASSWORD:-}
       DOCKER_HOST: ${DOCKER_HOST:-unix:///var/run/docker.sock}
       DOCKER_TLS_VERIFY: ${DOCKER_TLS_VERIFY:-1}
-      DOCKER_CERT_PATH: ${DOCKER_CERT_PATH:-}
+      DOCKER_CERT_PATH: ${DOCKER_CERT_PATH:-/etc/nixopus/docker-certs}
       REDIS_URL: ${REDIS_URL:-redis://nixopus-redis:6379}
       CADDY_ENDPOINT: ${CADDY_ENDPOINT:-http://nixopus-caddy:2019}
       ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:-http://localhost:3000}
@@ -62,7 +62,6 @@ services:
       CADDY_CONTAINER_NAME: ${CADDY_CONTAINER_NAME:-nixopus-caddy-container}
       CADDY_DATA_VOLUME: ${CADDY_DATA_VOLUME:-/etc/nixopus/caddy}
       CADDY_CONFIG_VOLUME: ${CADDY_CONFIG_VOLUME:-/etc/nixopus/caddy}
-      CADDYFILE_PATH: ${CADDYFILE_PATH:-/etc/nixopus/caddy/Caddyfile}
       CADDY_PORTS: "2019:2019,80:80,443:443"
       API_DOMAIN: ${API_DOMAIN:-}
       VIEW_DOMAIN: ${VIEW_DOMAIN:-}
@@ -86,21 +85,28 @@ networks:
     driver: bridge
 
 deps:
-  curl: { version: "1" }
-  go: { version: "1" }
-  air: { version: "" }
-  python: { version: "" }
-  poetry: { version: "" }
-  docker: { version: "" }
-  open-ssh: { version: "" }
-  open-sshserver: { version: "" }
-  git: { version: "" }
-  openssl: { version: "" }
-  python3-venv: { version: "" }
+  curl:           { package: "curl",           command: "curl" }
+  python3:        { package: "python3",        command: "python3" }
+  python3-venv:   { package: "python3-venv",   command: "" }
+  git:            { package: "git",            command: "git" }
+  docker.io:
+    package: "docker.io"
+    command: "docker"
+    install_command: |
+      curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh
+  openssl:        { package: "openssl",        command: "openssl" }
+  openssh-client: { package: "openssh-client", command: "ssh" }
+  openssh-server: { package: "openssh-server", command: "sshd" }
 
 nixopus-config-dir: /etc/nixopus
-compose-file-path: docker-compose.yml
+compose-file-path: source/docker-compose.yml
 clone:
   repo: "https://github.com/raghavyuva/nixopus"
   branch: "master"
   source-path: source
+
+ports: [2019, 80, 443, 7443, 8443, 6379, 5432]
+ssh_key_size: 4096
+ssh_key_type: ed25519
+ssh_passphrase: 
+ssh_file_path: ssh/nixopus_ed25519

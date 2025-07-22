@@ -126,17 +126,17 @@ class BaseDockerService:
         self.logger.debug(docker_command_executing.format(command=' '.join(cmd)))
         
         try:
-            self.logger.info(service_action_info.format(action=self.action, name=name))
+            self.logger.debug(service_action_info.format(action=self.action, name=name))
             
             if self.action == "up" and not kwargs.get("detach", False):
                 process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, universal_newlines=True)
                 
                 output_lines = []
-                self.logger.info("Docker container logs:")
-                self.logger.info("-" * 50)
+                self.logger.debug("Docker container logs:")
+                self.logger.debug("-" * 50)
                 
                 for line in process.stdout:
-                    self.logger.info(line.rstrip())  # Stream logs through logger
+                    self.logger.debug(line.rstrip())  # Stream logs through logger
                     output_lines.append(line.rstrip())
                 
                 return_code = process.wait()

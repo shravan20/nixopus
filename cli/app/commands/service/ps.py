@@ -119,7 +119,6 @@ class DockerService(BaseDockerService):
         self.logger.debug(docker_command_executing.format(command=' '.join(cmd)))
         
         try:
-            self.logger.info(service_action_info.format(action="ps", name=name))
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
             
             self.logger.debug(docker_command_completed.format(action="ps"))

@@ -33,6 +33,10 @@ class Config:
             config = expand_env_placeholders(config)
         return config
 
+    def get_service_env_values(self, service_env_path: str):
+        config = self.get_yaml_value(service_env_path)
+        return {key: expand_env_placeholders(value) for key, value in config.items()}
+
 
 def expand_env_placeholders(value: str) -> str:
     # Expand environment placeholders in the form ${ENV_VAR:-default}
@@ -56,3 +60,12 @@ CONFIG_ENDPOINT = "services.caddy.env.CONFIG_ENDPOINT"
 LOAD_ENDPOINT = "services.caddy.env.LOAD_ENDPOINT"
 STOP_ENDPOINT = "services.caddy.env.STOP_ENDPOINT"
 DEPS = "deps"
+PORTS = "ports"
+API_SERVICE = "services.api"
+VIEW_SERVICE = "services.view"
+SSH_KEY_SIZE = "ssh_key_size"
+SSH_KEY_TYPE = "ssh_key_type"
+SSH_FILE_PATH = "ssh_file_path"
+VIEW_PORT = "services.view.env.NEXT_PUBLIC_PORT"
+API_PORT = "services.api.env.PORT"
+CADDY_CONFIG_VOLUME = "services.caddy.env.CADDY_CONFIG_VOLUME"

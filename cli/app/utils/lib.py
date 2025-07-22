@@ -2,7 +2,6 @@ import os
 import platform
 import shutil
 import stat
-import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
 from typing import Callable, List, Optional, Tuple, TypeVar
@@ -75,16 +74,11 @@ class HostInformation:
         for pm in package_managers:
             if HostInformation.command_exists(pm):
                 return pm
-
-        return None
+        raise RuntimeError("No supported package manager found on this system. Please install one or specify it manually.")
 
     @staticmethod
     def command_exists(command):
-        try:
-            result = subprocess.run(["command", "-v", command], capture_output=True, text=True, check=False)
-            return result.returncode == 0
-        except Exception:
-            return False
+        return shutil.which(command) is not None
     
     @staticmethod
     def get_public_ip():

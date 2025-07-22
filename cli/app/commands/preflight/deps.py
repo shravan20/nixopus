@@ -1,3 +1,4 @@
+import shutil
 import subprocess
 from typing import Optional, Protocol
 
@@ -29,8 +30,7 @@ class DependencyChecker:
 
     def check_dependency(self, dep: str) -> bool:
         try:
-            result = subprocess.run(["command", "-v", dep], capture_output=True, text=True, timeout=1)
-            is_available = result.returncode == 0
+            is_available = shutil.which(dep) is not None
             self.logger.debug(debug_dep_check_result.format(dep=dep, status="available" if is_available else "not available"))
             return is_available
 
