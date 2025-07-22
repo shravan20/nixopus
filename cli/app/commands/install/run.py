@@ -2,14 +2,16 @@ import typer
 import os
 import yaml
 import json
+import shutil
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
 from app.utils.protocols import LoggerProtocol
-from app.utils.config import Config, VIEW_ENV_FILE, API_ENV_FILE, DEFAULT_REPO, DEFAULT_BRANCH, DEFAULT_PATH, NIXOPUS_CONFIG_DIR, PORTS, DEFAULT_COMPOSE_FILE, PROXY_PORT, SSH_KEY_TYPE, SSH_KEY_SIZE, SSH_FILE_PATH, VIEW_PORT, API_PORT
+from app.utils.config import Config, VIEW_ENV_FILE, API_ENV_FILE, DEFAULT_REPO, DEFAULT_BRANCH, DEFAULT_PATH, NIXOPUS_CONFIG_DIR, PORTS, DEFAULT_COMPOSE_FILE, PROXY_PORT, SSH_KEY_TYPE, SSH_KEY_SIZE, SSH_FILE_PATH, VIEW_PORT, API_PORT, DOCKER_PORT, CADDY_CONFIG_VOLUME
 from app.utils.timeout import TimeoutWrapper
 from app.commands.preflight.port import PortConfig, PortService
 from app.commands.clone.clone import Clone, CloneConfig
 from app.utils.lib import HostInformation, FileManager
 from app.commands.conf.base import BaseEnvironmentManager
+import re
 from app.commands.service.up import Up, UpConfig
 from app.commands.proxy.load import Load, LoadConfig
 from .ssh import SSH, SSHConfig
@@ -48,6 +50,7 @@ DEFAULTS = {
     'package_manager': HostInformation.get_package_manager(),
     'view_port': _config.get_yaml_value(VIEW_PORT),
     'api_port': _config.get_yaml_value(API_PORT),   
+    'docker_port': _config.get_yaml_value(DOCKER_PORT),
 }
 
 def get_config_value(key: str, provided_value=None):
@@ -67,6 +70,7 @@ class Install:
         self._user_config = self._load_user_config()
         self.progress = None
         self.main_task = None
+        self._validate_domains()
     
     def _load_user_config(self):
         if not self.config_file:
@@ -100,11 +104,20 @@ class Install:
             user_value = self._get_user_config_value(key)
             value = user_value if user_value is not None else DEFAULTS.get(key)
             
-            if value is None:
+            if value is None and key not in ['ssh_passphrase']:
                 raise ValueError(configuration_key_has_no_default_value.format(key=key))
             self._config_cache[key] = value
         return self._config_cache[key]
     
+    def _validate_domains(self):
+        if (self.api_domain is None) != (self.view_domain is None):
+            raise ValueError("Both api_domain and view_domain must be provided together, or neither should be provided")
+        
+        if self.api_domain and self.view_domain:
+            domain_pattern = re.compile(r'^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?))*$')
+            if not domain_pattern.match(self.api_domain) or not domain_pattern.match(self.view_domain):
+                raise ValueError("Invalid domain format. Domains must be valid hostnames")
+
     def _get_user_config_value(self, key: str):
         key_mappings = {
             'proxy_port': 'services.caddy.env.PROXY_PORT',
@@ -125,8 +138,8 @@ class Install:
         steps = [
             ("Preflight checks", self._run_preflight_checks),
             ("Installing dependencies", self._install_dependencies),
-            ("Setting up proxy config", self._setup_proxy_config),
             ("Cloning repository", self._setup_clone_and_config),
+            ("Setting up proxy config", self._setup_proxy_config),
             ("Creating environment files", self._create_env_files),
             ("Generating SSH keys", self._setup_ssh),
             ("Starting services", self._start_services),
@@ -221,7 +234,8 @@ class Install:
         
         for i, (service_name, service_key, env_file) in enumerate(services):            
             env_values = _config.get_service_env_values(service_key)
-            success, error = env_manager.write_env_file(env_file, env_values)
+            updated_env_values = self._update_environment_variables(env_values)
+            success, error = env_manager.write_env_file(env_file, updated_env_values)
             if not success:
                 raise Exception(f"{env_file_creation_failed} {service_name}: {error}")            
             file_perm_success, file_perm_error = FileManager.set_permissions(env_file, 0o644)
@@ -237,12 +251,15 @@ class Install:
             with open(caddy_json_template, 'r') as f:
                 config_str = f.read()
             
-            config_str = config_str.replace('{env.APP_DOMAIN}', self.view_domain)
-            config_str = config_str.replace('{env.API_DOMAIN}', self.api_domain)
-            
             host_ip = HostInformation.get_public_ip()
             view_port = self._get_config('view_port')
             api_port = self._get_config('api_port')
+
+            view_domain = self.view_domain if self.view_domain is not None else host_ip
+            api_domain = self.api_domain if self.api_domain is not None else host_ip
+
+            config_str = config_str.replace('{env.APP_DOMAIN}', view_domain)
+            config_str = config_str.replace('{env.API_DOMAIN}', api_domain)
             
             app_reverse_proxy_url = f"{host_ip}:{view_port}"
             api_reverse_proxy_url = f"{host_ip}:{api_port}"
@@ -252,6 +269,7 @@ class Install:
             caddy_config = json.loads(config_str)
             with open(caddy_json_template, 'w') as f:
                 json.dump(caddy_config, f, indent=2)
+            self._copy_caddyfile_to_target(full_source_path)
         
         self.logger.debug(f"{proxy_config_created}: {caddy_json_template}")
 
@@ -319,7 +337,6 @@ class Install:
             raise Exception(proxy_load_failed)
 
     def _show_success_message(self):
-        """Display formatted success message with access information"""
         nixopus_accessible_at = self._get_access_url()
         
         self.logger.success("Installation Complete!")
@@ -329,8 +346,48 @@ class Install:
         self.logger.info("If you have any questions, please visit the community forum at https://discord.gg/skdcq39Wpv")
         self.logger.highlight("See you in the community!")
     
+    def _update_environment_variables(self, env_values: dict) -> dict:
+        updated_env = env_values.copy()
+        host_ip = HostInformation.get_public_ip()
+        secure = self.api_domain is not None and self.view_domain is not None
+
+        api_host = self.api_domain if secure else f"{host_ip}:{self._get_config('api_port')}"
+        view_host = self.view_domain if secure else f"{host_ip}:{self._get_config('view_port')}"
+        protocol = "https" if secure else "http"
+        ws_protocol = "wss" if secure else "ws"
+        key_map = {
+            'ALLOWED_ORIGIN': f"{protocol}://{view_host}",
+            'SSH_HOST': host_ip,
+            'SSH_PRIVATE_KEY': self._get_config('ssh_key_path'),
+            'DOCKER_HOST': f"tcp://{host_ip}:{self._get_config('docker_port')}",
+            'WEBSOCKET_URL': f"{ws_protocol}://{view_host}/ws",
+            'API_URL': f"{protocol}://{api_host}/api",
+            'WEBHOOK_URL': f"{protocol}://{api_host}/api/v1/webhook",
+        }
+
+        for key, value in key_map.items():
+            if key in updated_env:
+                updated_env[key] = value
+
+        return updated_env
+
+    def _copy_caddyfile_to_target(self, full_source_path: str):
+        try:
+            source_caddyfile = os.path.join(full_source_path, 'helpers', 'Caddyfile')
+            target_dir = _config.get_yaml_value(CADDY_CONFIG_VOLUME)
+            target_caddyfile = os.path.join(target_dir, 'Caddyfile')
+            FileManager.create_directory(target_dir, logger=self.logger)
+            if os.path.exists(source_caddyfile):
+                shutil.copy2(source_caddyfile, target_caddyfile)
+                FileManager.set_permissions(target_caddyfile, 0o644, logger=self.logger)
+                self.logger.debug(f"Copied Caddyfile from {source_caddyfile} to {target_caddyfile}")
+            else:
+                self.logger.warning(f"Source Caddyfile not found at {source_caddyfile}")
+
+        except Exception as e:
+            self.logger.error(f"Failed to copy Caddyfile: {str(e)}")
+
     def _get_access_url(self):
-        """Determine the access URL based on provided domains or fallback to host IP"""
         if self.view_domain:
             return f"https://{self.view_domain}"
         elif self.api_domain:
