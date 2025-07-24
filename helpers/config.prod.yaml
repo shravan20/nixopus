@@ -13,11 +13,9 @@ services:
       SSH_HOST: ${SSH_HOST:-localhost}
       SSH_PORT: ${SSH_PORT:-22}
       SSH_USER: ${SSH_USER:-root}
-      SSH_PRIVATE_KEY: ${SSH_PRIVATE_KEY:-/etc/nixopus/ssh/nixopus_ed25519}
+      SSH_PRIVATE_KEY: ${SSH_PRIVATE_KEY:-/etc/nixopus/ssh/id_rsa}
       SSH_PASSWORD: ${SSH_PASSWORD:-}
       DOCKER_HOST: ${DOCKER_HOST:-unix:///var/run/docker.sock}
-      DOCKER_TLS_VERIFY: ${DOCKER_TLS_VERIFY:-1}
-      DOCKER_CERT_PATH: ${DOCKER_CERT_PATH:-/etc/nixopus/docker-certs}
       REDIS_URL: ${REDIS_URL:-redis://nixopus-redis:6379}
       CADDY_ENDPOINT: ${CADDY_ENDPOINT:-http://nixopus-caddy:2019}
       ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:-http://localhost:3000}
@@ -112,4 +110,4 @@ ports: [2019, 80, 443, 7443, 8443, 6379, 5432]
 ssh_key_size: 4096
 ssh_key_type: ed25519
 ssh_passphrase: 
-ssh_file_path: ssh/nixopus_ed25519
+ssh_file_path: ssh/id_rsa

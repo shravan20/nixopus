@@ -14,7 +14,7 @@ services:
     volumes:
       - ./logs:/app/logs
       - ${DOCKER_CERT_PATH:-/etc/nixopus/docker-certs}:/etc/nixopus/docker-certs
-      - ${SSH_PRIVATE_KEY:-/etc/nixopus/ssh/nixopus_ed25519}:/etc/nixopus/ssh/id_rsa
+      - ${SSH_PRIVATE_KEY:-/etc/nixopus/ssh/id_rsa}:/etc/nixopus/ssh/id_rsa
       - ${MOUNT_PATH:-/etc/nixopus/configs}:/etc/nixopus/configs
       - /var/run/docker.sock:/var/run/docker.sock
       - /etc/nixopus/source/api/.env:/app/.env

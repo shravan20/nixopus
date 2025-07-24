@@ -359,7 +359,6 @@ class Install:
             'ALLOWED_ORIGIN': f"{protocol}://{view_host}",
             'SSH_HOST': host_ip,
             'SSH_PRIVATE_KEY': self._get_config('ssh_key_path'),
-            'DOCKER_HOST': f"tcp://{host_ip}:{self._get_config('docker_port')}",
             'WEBSOCKET_URL': f"{ws_protocol}://{view_host}/ws",
             'API_URL': f"{protocol}://{api_host}/api",
             'WEBHOOK_URL': f"{protocol}://{api_host}/api/v1/webhook",
