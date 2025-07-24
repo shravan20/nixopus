@@ -1,4 +1,5 @@
 import os
+import sys
 import yaml
 import re
 from app.utils.message import MISSING_CONFIG_KEY_MESSAGE
@@ -7,7 +8,14 @@ class Config:
     def __init__(self, default_env="PRODUCTION"):
         self.default_env = default_env
         self._yaml_config = None
-        self._yaml_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../helpers/config.prod.yaml"))
+        
+        # Check if running as PyInstaller bundle
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+            # Running as PyInstaller bundle
+            self._yaml_path = os.path.join(sys._MEIPASS, "helpers", "config.prod.yaml")
+        else:
+            # Running as normal Python script
+            self._yaml_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../helpers/config.prod.yaml"))
 
     def get_env(self):
         return os.environ.get("ENV", self.default_env)
