@@ -25,6 +25,7 @@ from .messages import (
     conflict_config_loaded,
     supported_version_formats_info,
     unsupported_version_format_warning,
+    no_deps_found_warning,
 )
 
 
@@ -45,14 +46,13 @@ class VersionParser:
 
     # Supported version specification formats in config files
     # Format: "description": "example"
-    SUPPORTED_VERSION_FORMATS = {
-        "exact_version": "1.20.3",
-        "range_operators": ">=1.20.0, <2.0.0",
-        "greater_than_equal": ">=1.20.0",
-        "less_than": "<2.0.0",
-        "compatible_range": "~=1.20.0",  # Python-style compatible release
-        "major_minor_only": "1.20",  # Implies >=1.20.0, <1.21.0
-    }
+    # SUPPORTED_VERSION_FORMATS
+    #     "exact_version": "1.20.3"
+    #     "range_operators": ">=1.20.0, <2.0.0"
+    #     "greater_than_equal": ">=1.20.0"
+    #     "less_than": "<2.0.0"
+    #     "compatible_range": "~=1.20.0"  # Python-style compatible release
+    #     "major_minor_only": "1.20"  # Implies >=1.20.0, <1.21.0
 
     @staticmethod
     def parse_version_output(tool: str, output: str) -> Optional[str]:
@@ -217,46 +217,32 @@ class ConfigLoader:
 class ToolVersionChecker:
     """Handles version checking for different tools."""
 
-    # Common version commands for different tools
-    VERSION_COMMANDS = {
-        "docker": ["docker", "--version"],
-        "docker-compose": ["docker-compose", "--version"],
-        "go": ["go", "version"],
-        "node": ["node", "--version"],
-        "npm": ["npm", "--version"],
-        "yarn": ["yarn", "--version"],
-        "python": ["python", "--version"],
-        "python3": ["python3", "--version"],
-        "pip": ["pip", "--version"],
-        "pip3": ["pip3", "--version"],
-        "git": ["git", "--version"],
-        "curl": ["curl", "--version"],
-        "ssh": ["ssh", "-V"],
-        "caddy": ["caddy", "version"],
-        "postgresql": ["psql", "--version"],
-        "redis": ["redis-server", "--version"],
-        "air": ["air", "-v"],
-    }
-
     # Tool name mappings for command execution
-    TOOL_MAPPING = {"open-ssh": "ssh", "open-sshserver": "sshd", "python3-venv": "python3"}
+    TOOL_MAPPING = {"open-ssh": "ssh", "open-sshserver": "sshd", "python3-venv": "python3"}  # TODO: @shravan20 Fix this issue
 
-    def __init__(self, timeout: int, logger: LoggerProtocol):
+    def __init__(self, timeout: int, logger: LoggerProtocol, deps_config: Optional[Dict[str, Any]] = None):
         self.timeout = timeout
         self.logger = logger
+        self.deps_config = deps_config or {}
 
     def get_tool_version(self, tool: str) -> Optional[str]:
         """Get version of a tool."""
         try:
-            # Use predefined command or default to --version
-            cmd = self.VERSION_COMMANDS.get(tool, [tool, "--version"])
+            # get version-command from deps config
+            cmd = None
+            if tool in self.deps_config:
+                tool_cfg = self.deps_config[tool]
+                cmd = tool_cfg.get("version-command")
+            # Fallback to default if not found
+            if not cmd:
+                cmd = [tool, "--version"]
 
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=self.timeout)
 
             if result.returncode == 0:
                 return VersionParser.parse_version_output(tool, result.stdout)
             else:
-                # fllback to alternative command if available
+                # fallback to alternative command if available
                 alt_cmd = [tool, "-v"]
                 result = subprocess.run(alt_cmd, capture_output=True, text=True, timeout=self.timeout)
                 if result.returncode == 0:
@@ -309,7 +295,10 @@ class ConflictChecker:
         self.config = config
         self.logger = logger
         self.config_loader = ConfigLoader(logger)
-        self.version_checker = ToolVersionChecker(config.timeout, logger)
+        # Load deps config for version-command lookup
+        config_data = self.config_loader.load_config(self.config.config_file)
+        deps_config = config_data.get("deps", {})
+        self.version_checker = ToolVersionChecker(config.timeout, logger, deps_config)
 
     def check_conflicts(self) -> List[ConflictCheckResult]:
         """Check for version conflicts."""
@@ -323,7 +312,7 @@ class ConflictChecker:
             deps = config_data.get("deps", {})
 
             if not deps:
-                self.logger.warning("No dependencies found in configuration")
+                self.logger.warning(no_deps_found_warning)
                 return results
 
             # Check version conflicts
@@ -346,7 +335,7 @@ class ConflictChecker:
         # Check versions in parallel
         results = ParallelProcessor.process_items(
             items=list(version_requirements.items()),
-            processor_func=self._check_single_tool_version,
+            processor_func=self._check_tool_version,
             max_workers=min(len(version_requirements), 10),
             error_handler=self._handle_check_error,
         )
@@ -366,7 +355,7 @@ class ConflictChecker:
 
         return version_requirements
 
-    def _check_single_tool_version(self, tool_requirement: Tuple[str, Optional[str]]) -> ConflictCheckResult:
+    def _check_tool_version(self, tool_requirement: Tuple[str, Optional[str]]) -> ConflictCheckResult:
         """Check version for a single tool."""
         tool, expected_version = tool_requirement
         return self.version_checker.check_tool_version(tool, expected_version)

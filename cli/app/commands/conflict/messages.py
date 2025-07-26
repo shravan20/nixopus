@@ -24,7 +24,7 @@ timeout_checking_tool = "Timeout checking tool: {tool}"
 conflicts_found_warning = "Found {count} version conflict(s)"
 no_conflicts_info = "No version conflicts found"
 
-# Status messages  
+# Status messages
 checking_conflicts_info = "Checking for tool version conflicts..."
 
 # Version specification help
@@ -38,3 +38,6 @@ Supported version formats in config files:
 """
 
 unsupported_version_format_warning = "Unsupported version format '{format}' for {tool}. {help}"
+
+# warning messages
+no_deps_found_warning = "No dependencies found in configuration"

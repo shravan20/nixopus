@@ -91,45 +91,88 @@ deps:
     package: "curl"
     command: "curl"
     version: ">=7.80.0, <8.0.0"
-  python3:
+    version-command: ["curl", "--version"]
+  python3: # TODO: discuss if it should be python3 or python (some systems use python3 as the alias command)
     package: "python3"
     command: "python3"
     version: ">=3.8, <3.13"
+    version-command: ["python3", "--version"]
   python3-venv:
     package: "python3-venv"
     command: ""
     version: ">=3.8, <3.13"
+    version-command: ["python3", "--version"]
   poetry:
     package: "poetry"
     command: "poetry"
     version: ">=1.2.0, <2.0.0"
+    version-command: ["poetry", "--version"]
   redis:
     package: "redis-server"
     command: "redis-server"
     version: ">=7.0.0, <8.0.0"
+    version-command: ["redis-server", "--version"]
   git:
     package: "git"
     command: "git"
     version: ">=2.30.0, <3.0.0"
+    version-command: ["git", "--version"]
   docker.io: # shouldnt it be docker?
     package: "docker.io"
     command: "docker"
     install_command: |
       curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh
     version: ">=20.10.0, <26.0.0"
+    version-command: ["docker", "--version"]
   openssl:
     package: "openssl"
     command: "openssl"
     version: ">=1.1.1, <4.0.0"
+    version-command: ["openssl", "version"]
   open-ssh:
     version: ">=8.0, <10.0" # check with raghav
+    version-command: ["ssh", "-V"]
   openssh-client:
     package: "openssh-client"
     command: "ssh"
+    version-command: ["ssh", "-V"]
   openssh-server:
     package: "openssh-server"
     command: "sshd"
     version: ">=8.0, <10.0"
+    version-command: ["sshd", "-V"]
+  go:
+    package: "go"
+    command: "go"
+    version-command: ["go", "version"]
+  node:
+    package: "node"
+    command: "node"
+    version-command: ["node", "--version"]
+  npm:
+    package: "npm"
+    command: "npm"
+    version-command: ["npm", "--version"]
+  yarn:
+    package: "yarn"
+    command: "yarn"
+    version-command: ["yarn", "--version"]
+  python:
+    package: "python"
+    command: "python"
+    version-command: ["python", "--version"]
+  caddy:
+    package: "caddy"
+    command: "caddy"
+    version-command: ["caddy", "version"]
+  postgresql:
+    package: "postgresql"
+    command: "psql"
+    version-command: ["psql", "--version"]
+  air:
+    package: "air"
+    command: "air"
+    version-command: ["air", "-v"]
 
 nixopus-config-dir: /etc/nixopus
 compose-file-path: source/docker-compose.yml
