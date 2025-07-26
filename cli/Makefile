@@ -5,43 +5,46 @@ help: ## Show available commands
 
 setup: ## Setup Python environment and install dependencies
 	@if command -v poetry >/dev/null 2>&1; then \
-		poetry install --with dev; \
+		echo "Poetry found. Installing dependencies..."; \
+		poetry install --with dev --quiet; \
 		echo "Environment ready! Use: make nixopus ARGS=\"command\""; \
 	else \
-		echo "Poetry not found. Install: curl -sSL https://install.python-poetry.org | python3 -"; \
-		exit 1; \
+		echo "Poetry not found. Installing Poetry..."; \
+		curl -sSL https://install.python-poetry.org | python3 - >/dev/null 2>&1; \
+		echo "Poetry installed. Please restart your shell or run: source ~/.bashrc (or ~/.zshrc)"; \
+		echo "Then run 'make setup' again to install dependencies."; \
 	fi
 
 test: ## Run tests
-	poetry run pytest
+	@poetry run pytest
 
 test-cov: ## Run tests with coverage
-	poetry run pytest --cov=app --cov-report=term-missing --cov-report=html
+	@poetry run pytest --cov=app --cov-report=term-missing --cov-report=html
 
 lint: ## Run linting
-	poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-	poetry run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+	@poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+	@poetry run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
 format: ## Format code
-	poetry run black .
-	poetry run isort .
+	@poetry run black . --quiet
+	@poetry run isort . --quiet
 
 check: ## Run linting and tests
 	$(MAKE) lint && $(MAKE) test
 
 clean: ## Clean build artifacts
-	rm -rf build/ dist/ *.egg-info/ .pytest_cache/ htmlcov/ .coverage
-	find . -type d -name __pycache__ -delete
-	find . -type f -name "*.pyc" -delete
+	@rm -rf build/ dist/ *.egg-info/ .pytest_cache/ htmlcov/ .coverage
+	@find . -type d -name __pycache__ -delete
+	@find . -type f -name "*.pyc" -delete
 
 build: ## Build the package
-	poetry build
+	@poetry build
 
 publish: ## Publish to PyPI
-	poetry publish
+	@poetry publish
 
 dev: ## Activate development shell
-	poetry shell
+	@poetry shell
 
 nixopus: ## Run nixopus CLI
 	@if [ -z "$(ARGS)" ]; then \
@@ -51,10 +54,10 @@ nixopus: ## Run nixopus CLI
 	fi
 
 conflict: ## Run conflict command
-	poetry run nixopus conflict $(ARGS)
+	@poetry run nixopus conflict $(ARGS)
 
 preflight: ## Run preflight command
-	poetry run nixopus preflight $(ARGS)
+	@poetry run nixopus preflight $(ARGS)
 
 version: ## Show version
-	poetry run nixopus version
+	@poetry run nixopus version

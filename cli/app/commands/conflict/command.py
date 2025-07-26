@@ -1,6 +1,12 @@
 import typer
 from .conflict import ConflictConfig, ConflictService
-from .messages import conflict_check_help, error_checking_conflicts
+from .messages import (
+    conflict_check_help, 
+    error_checking_conflicts,
+    conflicts_found_warning,
+    no_conflicts_info,
+    checking_conflicts_info
+)
 from app.utils.logger import Logger
 
 conflict_app = typer.Typer(help=conflict_check_help, no_args_is_help=False)
@@ -18,6 +24,7 @@ def conflict_callback(
     if ctx.invoked_subcommand is None:
         try:
             logger = Logger(verbose=verbose)
+            logger.info(checking_conflicts_info)
 
             config = ConflictConfig(
                 config_file=config_file,
@@ -35,11 +42,11 @@ def conflict_callback(
 
             if conflicts:
                 logger.error(result)
-                logger.warning(f"Found {len(conflicts)} version conflict(s)")
+                logger.warning(conflicts_found_warning.format(count=len(conflicts)))
                 raise typer.Exit(1)
             else:
                 logger.success(result)
-                logger.info("No version conflicts found")
+                logger.info(no_conflicts_info)
 
         except Exception as e:
             logger = Logger(verbose=verbose)

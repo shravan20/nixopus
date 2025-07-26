@@ -19,3 +19,22 @@ tool_version_compatible = "Version compatible"
 error_checking_tool_version = "Error checking version for {tool}: {error}"
 error_parsing_version = "Error parsing version for {tool}: {error}"
 timeout_checking_tool = "Timeout checking tool: {tool}"
+
+# Success/Info messages
+conflicts_found_warning = "Found {count} version conflict(s)"
+no_conflicts_info = "No version conflicts found"
+
+# Status messages  
+checking_conflicts_info = "Checking for tool version conflicts..."
+
+# Version specification help
+supported_version_formats_info = """
+Supported version formats in config files:
+  - Exact version: "1.20.3"
+  - Range operators: ">=1.20.0, <2.0.0"
+  - Greater/less than: ">=1.20.0", "<2.0.0"
+  - Compatible release: "~=1.20.0"
+  - Major.minor only: "1.20" (treated as >=1.20.0, <1.21.0)
+"""
+
+unsupported_version_format_warning = "Unsupported version format '{format}' for {tool}. {help}"

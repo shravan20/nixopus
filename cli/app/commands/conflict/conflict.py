@@ -23,21 +23,37 @@ from .messages import (
     conflict_invalid_config,
     conflict_loading_config,
     conflict_config_loaded,
+    supported_version_formats_info,
+    unsupported_version_format_warning,
 )
 
 
 class VersionParser:
     """Utility class for parsing and comparing versions."""
-    
+
     # Version pattern mappings for different tools
     VERSION_PATTERNS = [
-        r"version\s+(\d+\.\d+\.\d+)",
-        r"v(\d+\.\d+\.\d+)",
-        r"(\d+\.\d+\.\d+)",
-        r"Version\s+(\d+\.\d+\.\d+)",
-        r"(\d+\.\d+)",
+        r"version\s+(\d+\.\d+\.\d+)",  # "version 1.20.3", "version 2.1.0"
+        r"v(\d+\.\d+\.\d+)",  # "v1.20.3", "v2.1.0"
+        r"(\d+\.\d+\.\d+)",  # "1.20.3", "2.1.0" (standalone)
+        r"Version\s+(\d+\.\d+\.\d+)",  # "Version 1.20.3", "Version 2.1.0"
+        r"(\d+\.\d+)",  # "1.20", "2.1" (major.minor only)
     ]
-    
+
+    # Version operators for requirement specifications
+    VERSION_OPERATORS = [">=", "<=", ">", "<", "==", "!=", "~", "^"]
+
+    # Supported version specification formats in config files
+    # Format: "description": "example"
+    SUPPORTED_VERSION_FORMATS = {
+        "exact_version": "1.20.3",
+        "range_operators": ">=1.20.0, <2.0.0",
+        "greater_than_equal": ">=1.20.0",
+        "less_than": "<2.0.0",
+        "compatible_range": "~=1.20.0",  # Python-style compatible release
+        "major_minor_only": "1.20",  # Implies >=1.20.0, <1.21.0
+    }
+
     @staticmethod
     def parse_version_output(tool: str, output: str) -> Optional[str]:
         """Parse version from tool output."""
@@ -48,22 +64,55 @@ class VersionParser:
                 if match:
                     return match.group(1)
 
-            # Tool-specific parsing
+            # Tool-specific parsing for unique output formats
             if tool == "go":
+                # "go version go1.20.3 darwin/amd64" -> "1.20.3"
                 match = re.search(r"go(\d+\.\d+\.\d+)", output)
+                if match:
+                    return match.group(1)
+
+            elif tool == "curl":
+                # "curl 7.53.1 (x86_64-apple-darwin14.5.0)..." -> "7.53.1"
+                match = re.search(r"curl\s+(\d+\.\d+\.\d+)", output)
+                if match:
+                    return match.group(1)
+
+            elif tool == "ssh" or tool == "open-ssh":
+                # "OpenSSH_9.8p1, LibreSSL 3.3.6" -> "9.8.1"
+                match = re.search(r"OpenSSH_(\d+\.\d+)(?:p(\d+))?", output)
+                if match:
+                    major_minor = match.group(1)
+                    patch = match.group(2) or "0"
+                    return f"{major_minor}.{patch}"
+
+            elif tool == "redis":
+                # "Redis server v=7.0.11 sha=00000000:0..." -> "7.0.11"
+                match = re.search(r"v=(\d+\.\d+\.\d+)", output)
+                if match:
+                    return match.group(1)
+
+            elif tool == "postgresql" or tool == "psql":
+                # "psql (PostgreSQL) 14.9" -> "14.9"
+                match = re.search(r"PostgreSQL\)\s+(\d+\.\d+)", output)
+                if match:
+                    return match.group(1)
+
+            elif tool == "air":
+                # Air might have specific format, keeping flexible for now
+                match = re.search(r"(\d+\.\d+\.\d+)", output)
                 if match:
                     return match.group(1)
 
             return None
         except Exception as e:
-            raise ValueError(f"Error parsing version for {tool}: {str(e)}")
+            raise ValueError(error_parsing_version.format(tool=tool, error=str(e)))
 
     @staticmethod
     def compare_versions(current: str, expected: str) -> bool:
         """Compare version against requirement specification."""
         try:
             # Handle simple version comparisons (backwards compatibility)
-            if not any(op in expected for op in [">=", "<=", ">", "<", "==", "!=", "~", "^"]):
+            if not any(op in expected for op in VersionParser.VERSION_OPERATORS):
                 # Default to >= for simple version strings
                 return version.parse(current) >= version.parse(expected)
 
@@ -77,55 +126,72 @@ class VersionParser:
 
     @staticmethod
     def normalize_version_requirement(requirement: str) -> str:
-        """Parse version requirement and return a normalized specifier."""
+        """
+        Parse version requirement and return a normalized specifier.
+
+        Supported formats in config files:
+        - Exact version: "1.20.3"
+        - Range operators: ">=1.20.0, <2.0.0"
+        - Greater/less than: ">=1.20.0", "<2.0.0"
+        - Compatible release: "~=1.20.0" (Python-style)
+        - Major.minor only: "1.20" (treated as >=1.20.0, <1.21.0)
+        """
         if not requirement:
             return requirement
 
-        # Handle npm-style caret ranges: ^1.20.0 -> >=1.20.0, <2.0.0
-        if requirement.startswith("^"):
-            base_version = requirement[1:]
+        requirement = requirement.strip()
+
+        # If it already contains operators, return as-is
+        if any(op in requirement for op in VersionParser.VERSION_OPERATORS):
+            return requirement
+
+        # Handle major.minor format (e.g., "1.20" -> ">=1.20.0, <1.21.0")
+        if re.match(r"^\d+\.\d+$", requirement):
             try:
-                parsed = version.parse(base_version)
-                major = parsed.major
-                return f">={base_version}, <{major + 1}.0.0"
-            except Exception:
-                return f">={base_version}"
+                parts = requirement.split(".")
+                major, minor = int(parts[0]), int(parts[1])
+                return f">={requirement}.0, <{major}.{minor + 1}.0"
+            except (ValueError, IndexError):
+                return f">={requirement}"
 
-        # Handle npm-style tilde ranges: ~1.20.0 -> >=1.20.0, <1.21.0
-        if requirement.startswith("~"):
-            base_version = requirement[1:]
-            try:
-                parsed = version.parse(base_version)
-                major = parsed.major
-                minor = parsed.minor
-                return f">={base_version}, <{major}.{minor + 1}.0"
-            except Exception:
-                return f">={base_version}"
+        # Handle exact version format (e.g., "1.20.3" -> "==1.20.3")
+        if re.match(r"^\d+\.\d+\.\d+$", requirement):
+            return f"=={requirement}"
 
-        # Handle ranges with commas: 1.20.0,2.0.0 -> >=1.20.0, <2.0.0
-        if "," in requirement and not any(op in requirement for op in [">=", "<=", ">", "<", "==", "!="]):
-            parts = [p.strip() for p in requirement.split(",")]
-            if len(parts) == 2:
-                return f">={parts[0]}, <{parts[1]}"
+        # If none of the above, treat as exact match
+        return f"=={requirement}"
 
-        # Handle x.x.x format ranges: 1.20.* -> >=1.20.0, <1.21.0
-        if requirement.endswith(".*") or requirement.endswith(".x"):
-            base_version = requirement.replace(".*", ".0").replace(".x", ".0")
-            try:
-                parsed = version.parse(base_version)
-                major = parsed.major
-                minor = parsed.minor
-                return f">={base_version}, <{major}.{minor + 1}.0"
-            except Exception:
-                return f">={base_version}"
+    @staticmethod
+    def validate_version_format(requirement: str) -> bool:
+        """
+        Validate if the version requirement follows supported formats.
 
-        # Return as-is if it already contains operators
-        return requirement
+        Returns True if the format is supported, False otherwise.
+        """
+        if not requirement:
+            return True
+
+        requirement = requirement.strip()
+
+        # Check if it contains supported operators
+        if any(op in requirement for op in VersionParser.VERSION_OPERATORS):
+            return True
+
+        # Check for major.minor format
+        if re.match(r"^\d+\.\d+$", requirement):
+            return True
+
+        # Check for exact version format
+        if re.match(r"^\d+\.\d+\.\d+$", requirement):
+            return True
+
+        # If none match, it's unsupported
+        return False
 
 
 class ConfigLoader:
     """Handles loading and parsing of configuration files."""
-    
+
     def __init__(self, logger: LoggerProtocol):
         self.logger = logger
 
@@ -150,7 +216,7 @@ class ConfigLoader:
 
 class ToolVersionChecker:
     """Handles version checking for different tools."""
-    
+
     # Common version commands for different tools
     VERSION_COMMANDS = {
         "docker": ["docker", "--version"],
@@ -171,13 +237,9 @@ class ToolVersionChecker:
         "redis": ["redis-server", "--version"],
         "air": ["air", "-v"],
     }
-    
+
     # Tool name mappings for command execution
-    TOOL_MAPPING = {
-        "open-ssh": "ssh",
-        "open-sshserver": "sshd",
-        "python3-venv": "python3"
-    }
+    TOOL_MAPPING = {"open-ssh": "ssh", "open-sshserver": "sshd", "python3-venv": "python3"}
 
     def __init__(self, timeout: int, logger: LoggerProtocol):
         self.timeout = timeout
@@ -188,13 +250,13 @@ class ToolVersionChecker:
         try:
             # Use predefined command or default to --version
             cmd = self.VERSION_COMMANDS.get(tool, [tool, "--version"])
-            
+
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=self.timeout)
 
             if result.returncode == 0:
                 return VersionParser.parse_version_output(tool, result.stdout)
             else:
-                # Try alternative version command
+                # fllback to alternative command if available
                 alt_cmd = [tool, "-v"]
                 result = subprocess.run(alt_cmd, capture_output=True, text=True, timeout=self.timeout)
                 if result.returncode == 0:
@@ -216,21 +278,13 @@ class ToolVersionChecker:
 
         if current_version is None:
             return ConflictCheckResult(
-                tool=tool,
-                expected=expected_version,
-                current=None,
-                status=tool_not_found,
-                conflict=True
+                tool=tool, expected=expected_version, current=None, status=tool_not_found, conflict=True
             )
 
         if expected_version is None or expected_version == "":
             # Just check existence
             return ConflictCheckResult(
-                tool=tool,
-                expected="present",
-                current=current_version,
-                status=tool_version_compatible,
-                conflict=False
+                tool=tool, expected="present", current=current_version, status=tool_version_compatible, conflict=False
             )
 
         # Parse version requirement to handle ranges
@@ -250,7 +304,7 @@ class ToolVersionChecker:
 
 class ConflictChecker:
     """Main class for checking version conflicts."""
-    
+
     def __init__(self, config: ConflictConfig, logger: LoggerProtocol):
         self.config = config
         self.logger = logger
@@ -264,7 +318,7 @@ class ConflictChecker:
         try:
             # Load configuration
             config_data = self.config_loader.load_config(self.config.config_file)
-            
+
             # Extract version requirements from deps section
             deps = config_data.get("deps", {})
 
@@ -277,12 +331,7 @@ class ConflictChecker:
 
         except Exception as e:
             self.logger.error(f"Error loading configuration: {str(e)}")
-            results.append(ConflictCheckResult(
-                tool="configuration",
-                status="error",
-                conflict=True,
-                error=str(e)
-            ))
+            results.append(ConflictCheckResult(tool="configuration", status="error", conflict=True, error=str(e)))
 
         return results
 
@@ -290,7 +339,7 @@ class ConflictChecker:
         """Check for tool version conflicts from deps configuration."""
         # Extract version requirements from deps
         version_requirements = self._extract_version_requirements(deps)
-        
+
         if not version_requirements:
             return []
 
@@ -307,14 +356,14 @@ class ConflictChecker:
     def _extract_version_requirements(self, deps: Dict[str, Any]) -> Dict[str, Optional[str]]:
         """Extract version requirements from deps configuration."""
         version_requirements = {}
-        
+
         for tool, config in deps.items():
             if isinstance(config, dict):
                 # Only check tools that have a version key (even if empty)
                 if "version" in config:
                     version_req = config.get("version", "")
                     version_requirements[tool] = version_req if version_req else None
-        
+
         return version_requirements
 
     def _check_single_tool_version(self, tool_requirement: Tuple[str, Optional[str]]) -> ConflictCheckResult:
@@ -326,18 +375,13 @@ class ConflictChecker:
         """Handle errors during version checking."""
         tool, expected_version = tool_requirement
         return ConflictCheckResult(
-            tool=tool,
-            expected=expected_version,
-            current=None,
-            status="error",
-            conflict=True,
-            error=str(error)
+            tool=tool, expected=expected_version, current=None, status="error", conflict=True, error=str(error)
         )
 
 
 class ConflictFormatter:
     """Handles formatting of conflict check results."""
-    
+
     def __init__(self):
         self.output_formatter = OutputFormatter()
 
@@ -351,7 +395,7 @@ class ConflictFormatter:
         for result in data:
             data_dict = result.model_dump()
             message = self._format_single_result(result)
-            
+
             if result.conflict:
                 messages.append(self.output_formatter.create_error_message(message, data_dict))
             else:
@@ -372,7 +416,7 @@ class ConflictFormatter:
 
 class ConflictService:
     """Main service class for conflict checking functionality."""
-    
+
     def __init__(self, config: ConflictConfig, logger: Optional[LoggerProtocol] = None):
         self.config = config
         self.logger = logger or Logger(verbose=config.verbose)
