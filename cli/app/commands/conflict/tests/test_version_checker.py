@@ -55,9 +55,11 @@ class TestVersionChecker(unittest.TestCase):
 
         self.assertIsNone(version)
 
-    def test_tool_mapping(self):
+    @patch("app.commands.conflict.conflict.ConfigLoader.load_config")
+    def test_tool_mapping(self, mock_load_config):
         """Test tool name mapping for system commands"""
-        # Test that the mapping works correctly in _check_version_conflicts
+        # Provide a dummy config for ConflictChecker
+        mock_load_config.return_value = {"deps": {"docker": {"version": "20.10.0"}, "go": {"version": "1.18.0"}, "python": {"version": "3.9.0"}}}
         deps = {"docker": {"version": "20.10.0"}, "go": {"version": "1.18.0"}, "python": {"version": "3.9.0"}}
 
         conflict_checker = ConflictChecker(self.config, self.logger)
@@ -70,10 +72,8 @@ class TestVersionChecker(unittest.TestCase):
 
             # Should have called get_tool_version for each tool
             self.assertEqual(mock_get_version.call_count, 3)
-            
             # Check that we got results for all tools
             self.assertEqual(len(results), 3)
-            
             # Check that the results have the expected structure
             for result in results:
                 self.assertIn(result.tool, ["docker", "go", "python"])
@@ -133,22 +133,23 @@ class TestVersionChecker(unittest.TestCase):
 
     def test_version_commands_mapping(self):
         """Test that different tools use correct version commands"""
-        checker = ToolVersionChecker(5, self.logger)
-        
+        deps_config = {
+            "docker": {"version-command": ["docker", "--version"]},
+            "go": {"version-command": ["go", "version"]},
+            "ssh": {"version-command": ["ssh", "-V"]},
+        }
+        checker = ToolVersionChecker(5, self.logger, deps_config)
         with patch("subprocess.run") as mock_run:
             mock_result = Mock()
             mock_result.returncode = 0
             mock_result.stdout = "version 1.0.0"
             mock_run.return_value = mock_result
-            
             # Test Docker uses correct command
             checker.get_tool_version("docker")
             mock_run.assert_called_with(["docker", "--version"], capture_output=True, text=True, timeout=5)
-            
             # Test Go uses correct command
             checker.get_tool_version("go")
             mock_run.assert_called_with(["go", "version"], capture_output=True, text=True, timeout=5)
-            
             # Test SSH uses correct command
             checker.get_tool_version("ssh")
             mock_run.assert_called_with(["ssh", "-V"], capture_output=True, text=True, timeout=5)
