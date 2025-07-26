@@ -1,3 +1,4 @@
+import shutil
 import subprocess
 from typing import Optional, Protocol
 
@@ -8,7 +9,15 @@ from app.utils.logger import Logger
 from app.utils.output_formatter import OutputFormatter
 from app.utils.protocols import LoggerProtocol
 
-from .messages import error_checking_dependency, invalid_os, invalid_package_manager, timeout_checking_dependency
+from .messages import (
+    error_checking_dependency,
+    invalid_os,
+    invalid_package_manager,
+    timeout_checking_dependency,
+    debug_processing_deps,
+    debug_dep_check_result,
+    error_subprocess_execution_failed,
+)
 
 
 class DependencyCheckerProtocol(Protocol):
@@ -16,22 +25,22 @@ class DependencyCheckerProtocol(Protocol):
 
 
 class DependencyChecker:
-    def __init__(self, timeout: int, logger: LoggerProtocol):
-        self.timeout = timeout
+    def __init__(self, logger: LoggerProtocol):
         self.logger = logger
 
     def check_dependency(self, dep: str) -> bool:
-        self.logger.debug(f"Checking dependency: {dep}")
-
         try:
-            result = subprocess.run(["command", "-v", dep], capture_output=True, text=True, timeout=self.timeout)
-            return result.returncode == 0
+            is_available = shutil.which(dep) is not None
+            self.logger.debug(debug_dep_check_result.format(dep=dep, status="available" if is_available else "not available"))
+            return is_available
 
         except subprocess.TimeoutExpired:
-            self.logger.error(timeout_checking_dependency.format(dep=dep))
+            if self.logger.verbose:
+                self.logger.error(timeout_checking_dependency.format(dep=dep))
             return False
         except Exception as e:
-            self.logger.error(error_checking_dependency.format(dep=dep, error=e))
+            if self.logger.verbose:
+                self.logger.error(error_subprocess_execution_failed.format(dep=dep, error=e))
             return False
 
 
@@ -57,21 +66,53 @@ class DependencyFormatter:
                 self.output_formatter.create_success_message("No dependencies to check"), output
             )
 
-        messages = []
-        for result in results:
+        if len(results) == 1 and output == "text":
+            messages = []
+            result = results[0]
+            message = f"{result.dependency} is {'available' if result.is_available else 'not available'}"
             if result.is_available:
                 message = f"{result.dependency} is available"
-                messages.append(self.output_formatter.create_success_message(message, result.model_dump()))
+                data = {"dependency": result.dependency, "is_available": result.is_available}
+                messages.append(self.output_formatter.create_success_message(message, data))
             else:
                 error = f"{result.dependency} is not available"
-                messages.append(self.output_formatter.create_error_message(error, result.model_dump()))
+                data = {"dependency": result.dependency, "is_available": result.is_available, "error": result.error}
+                messages.append(self.output_formatter.create_error_message(error, data))
 
-        return self.output_formatter.format_output(messages, output)
+        if output == "text":
+            table_data = []
+            for result in results:
+                row = {
+                    "Dependency": result.dependency,
+                    "Status": "available" if result.is_available else "not available"
+                }
+                if result.error and not result.is_available:
+                    row["Error"] = result.error
+                table_data.append(row)
+            
+            return self.output_formatter.create_table(
+                table_data,
+                title="Dependency Check Results",
+                show_header=True,
+                show_lines=True
+            )
+        else:
+            json_data = []
+            for result in results:
+                item = {
+                    "dependency": result.dependency,
+                    "is_available": result.is_available,
+                    "status": "available" if result.is_available else "not available"
+                }
+                if result.error and not result.is_available:
+                    item["error"] = result.error
+                json_data.append(item)
+            
+            return self.output_formatter.format_json(json_data)
 
 
 class DepsCheckResult(BaseModel):
     dependency: str
-    timeout: int
     verbose: bool
     output: str
     os: str
@@ -82,7 +123,6 @@ class DepsCheckResult(BaseModel):
 
 class DepsConfig(BaseModel):
     deps: list[str] = Field(..., min_length=1, description="The list of dependencies to check")
-    timeout: int = Field(1, gt=0, le=60, description="The timeout in seconds")
     verbose: bool = Field(False, description="Verbose output")
     output: str = Field("text", description="Output format, text, json")
     os: str = Field(..., description=f"The operating system to check, available: {Supported.get_os()}")
@@ -105,13 +145,12 @@ class DepsService:
     def __init__(self, config: DepsConfig, logger: LoggerProtocol = None, checker: DependencyCheckerProtocol = None):
         self.config = config
         self.logger = logger or Logger(verbose=config.verbose)
-        self.checker = checker or DependencyChecker(config.timeout, self.logger)
+        self.checker = checker or DependencyChecker(self.logger)
         self.formatter = DependencyFormatter()
 
     def _create_result(self, dep: str, is_available: bool, error: str = None) -> DepsCheckResult:
         return DepsCheckResult(
             dependency=dep,
-            timeout=self.config.timeout,
             verbose=self.config.verbose,
             output=self.config.output,
             os=self.config.os,
@@ -128,13 +167,14 @@ class DepsService:
             return self._create_result(dep, False, str(e))
 
     def check_dependencies(self) -> list[DepsCheckResult]:
-        self.logger.debug(f"Checking dependencies: {self.config.deps}")
+        self.logger.debug(debug_processing_deps.format(count=len(self.config.deps)))
 
         def process_dep(dep: str) -> DepsCheckResult:
             return self._check_dependency(dep)
 
         def error_handler(dep: str, error: Exception) -> DepsCheckResult:
-            self.logger.error(error_checking_dependency.format(dep=dep, error=error))
+            if self.logger.verbose:
+                self.logger.error(error_checking_dependency.format(dep=dep, error=error))
             return self._create_result(dep, False, str(error))
 
         results = ParallelProcessor.process_items(

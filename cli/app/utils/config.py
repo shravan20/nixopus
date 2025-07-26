@@ -1,4 +1,5 @@
 import os
+import sys
 import yaml
 import re
 from app.utils.message import MISSING_CONFIG_KEY_MESSAGE
@@ -7,7 +8,14 @@ class Config:
     def __init__(self, default_env="PRODUCTION"):
         self.default_env = default_env
         self._yaml_config = None
-        self._yaml_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../helpers/config.prod.yaml"))
+        
+        # Check if running as PyInstaller bundle
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+            # Running as PyInstaller bundle
+            self._yaml_path = os.path.join(sys._MEIPASS, "helpers", "config.prod.yaml")
+        else:
+            # Running as normal Python script
+            self._yaml_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../helpers/config.prod.yaml"))
 
     def get_env(self):
         return os.environ.get("ENV", self.default_env)
@@ -33,6 +41,10 @@ class Config:
             config = expand_env_placeholders(config)
         return config
 
+    def get_service_env_values(self, service_env_path: str):
+        config = self.get_yaml_value(service_env_path)
+        return {key: expand_env_placeholders(value) for key, value in config.items()}
+
 
 def expand_env_placeholders(value: str) -> str:
     # Expand environment placeholders in the form ${ENV_VAR:-default}
@@ -56,3 +68,13 @@ CONFIG_ENDPOINT = "services.caddy.env.CONFIG_ENDPOINT"
 LOAD_ENDPOINT = "services.caddy.env.LOAD_ENDPOINT"
 STOP_ENDPOINT = "services.caddy.env.STOP_ENDPOINT"
 DEPS = "deps"
+PORTS = "ports"
+API_SERVICE = "services.api"
+VIEW_SERVICE = "services.view"
+SSH_KEY_SIZE = "ssh_key_size"
+SSH_KEY_TYPE = "ssh_key_type"
+SSH_FILE_PATH = "ssh_file_path"
+VIEW_PORT = "services.view.env.NEXT_PUBLIC_PORT"
+API_PORT = "services.api.env.PORT"
+CADDY_CONFIG_VOLUME = "services.caddy.env.CADDY_CONFIG_VOLUME"
+DOCKER_PORT = "services.api.env.DOCKER_PORT"

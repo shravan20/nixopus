@@ -9,7 +9,15 @@ from app.utils.logger import Logger
 from app.utils.output_formatter import OutputFormatter
 from app.utils.protocols import LoggerProtocol
 
-from .messages import available, error_checking_port, host_must_be_localhost_or_valid_ip_or_domain, not_available
+from .messages import (
+    available,
+    error_checking_port,
+    host_must_be_localhost_or_valid_ip_or_domain,
+    not_available,
+    debug_processing_ports,
+    debug_port_check_result,
+    error_socket_connection_failed,
+)
 
 
 class PortCheckerProtocol(Protocol):
@@ -27,7 +35,6 @@ class PortCheckResult(TypedDict):
 class PortConfig(BaseModel):
     ports: List[int] = Field(..., min_length=1, max_length=65535, description="List of ports to check")
     host: str = Field("localhost", min_length=1, description="Host to check")
-    timeout: int = Field(1, gt=0, le=60, description="Timeout in seconds")
     verbose: bool = Field(False, description="Verbose output")
 
     @field_validator("host")
@@ -50,47 +57,81 @@ class PortFormatter:
 
     def format_output(self, data: Union[str, List[PortCheckResult], Any], output_type: str) -> str:
         if isinstance(data, list):
-            messages = []
-            for item in data:
+            if len(data) == 1 and output_type == "text":
+                item = data[0]
+                message = f"Port {item['port']}: {item['status']}"
                 if item.get("is_available", False):
-                    message = f"Port {item['port']}: {item['status']}"
-                    messages.append(self.output_formatter.create_success_message(message, item))
+                    return self.output_formatter.create_success_message(message).message
                 else:
-                    error = f"Port {item['port']}: {item['status']}"
-                    messages.append(self.output_formatter.create_error_message(error, item))
-            return self.output_formatter.format_output(messages, output_type)
+                    return f"Error: {message}"
+            
+            if output_type == "text":
+                table_data = []
+                for item in data:
+                    row = {
+                        "Port": str(item['port']),
+                        "Status": item['status']
+                    }
+                    if item.get('host') and item['host'] != "localhost":
+                        row["Host"] = item['host']
+                    if item.get('error'):
+                        row["Error"] = item['error']
+                    table_data.append(row)
+                
+                return self.output_formatter.create_table(
+                    table_data,
+                    title="Port Check Results",
+                    show_header=True,
+                    show_lines=True
+                )
+            else:
+                json_data = []
+                for item in data:
+                    port_data = {
+                        "port": item['port'],
+                        "status": item['status'],
+                        "is_available": item.get('is_available', False)
+                    }
+                    if item.get('host'):
+                        port_data["host"] = item['host']
+                    if item.get('error'):
+                        port_data["error"] = item['error']
+                    json_data.append(port_data)
+                return self.output_formatter.format_json(json_data)
         else:
             return str(data)
 
 
 class PortChecker:
-    def __init__(self, logger: LoggerProtocol, timeout: int):
+    def __init__(self, logger: LoggerProtocol):
         self.logger = logger
-        self.timeout = timeout
 
     def is_port_available(self, host: str, port: int) -> bool:
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                sock.settimeout(self.timeout)
+                sock.settimeout(1)
                 result = sock.connect_ex((host, port))
                 return result != 0
-        except Exception:
+        except Exception as e:
+            if self.logger.verbose:
+                self.logger.error(error_socket_connection_failed.format(port=port, error=e))
             return False
 
     def check_port(self, port: int, config: PortConfig) -> PortCheckResult:
-        self.logger.debug(f"Checking port {port} on host {config.host}")
         try:
             status = available if self.is_port_available(config.host, port) else not_available
+            self.logger.debug(debug_port_check_result.format(port=port, status=status))
             return self._create_result(port, config, status)
         except Exception as e:
-            self.logger.error(error_checking_port.format(port=port, error=str(e)))
+            if self.logger.verbose:
+                self.logger.error(error_checking_port.format(port=port, error=str(e)))
             return self._create_result(port, config, not_available, str(e))
 
     def _create_result(self, port: int, config: PortConfig, status: str, error: Optional[str] = None) -> PortCheckResult:
         return {
             "port": port,
             "status": status,
-            "host": config.host if config.verbose else None,
+            "host": config.host if config.host != "localhost" else None,
             "error": error,
             "is_available": status == available,
         }
@@ -100,17 +141,18 @@ class PortService:
     def __init__(self, config: PortConfig, logger: LoggerProtocol = None, checker: PortCheckerProtocol = None):
         self.config = config
         self.logger = logger or Logger(verbose=config.verbose)
-        self.checker = checker or PortChecker(self.logger, config.timeout)
+        self.checker = checker or PortChecker(self.logger)
         self.formatter = PortFormatter()
 
     def check_ports(self) -> List[PortCheckResult]:
-        self.logger.debug(f"Checking ports: {self.config.ports}")
+        self.logger.debug(debug_processing_ports.format(count=len(self.config.ports)))
 
         def process_port(port: int) -> PortCheckResult:
             return self.checker.check_port(port, self.config)
 
         def error_handler(port: int, error: Exception) -> PortCheckResult:
-            self.logger.error(error_checking_port.format(port=port, error=str(error)))
+            if self.logger.verbose:
+                self.logger.error(error_checking_port.format(port=port, error=str(error)))
             return self.checker._create_result(port, self.config, not_available, str(error))
 
         results = ParallelProcessor.process_items(

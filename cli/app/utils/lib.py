@@ -2,7 +2,6 @@ import os
 import platform
 import shutil
 import stat
-import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
 from typing import Callable, List, Optional, Tuple, TypeVar
@@ -75,16 +74,11 @@ class HostInformation:
         for pm in package_managers:
             if HostInformation.command_exists(pm):
                 return pm
-
-        return None
+        raise RuntimeError("No supported package manager found on this system. Please install one or specify it manually.")
 
     @staticmethod
     def command_exists(command):
-        try:
-            result = subprocess.run(["command", "-v", command], capture_output=True, text=True, check=False)
-            return result.returncode == 0
-        except Exception:
-            return False
+        return shutil.which(command) is not None
     
     @staticmethod
     def get_public_ip():
@@ -136,13 +130,20 @@ class DirectoryManager:
 
     @staticmethod
     def remove_directory(path: str, logger=None) -> bool:
+        if logger:
+            logger.debug(f"Attempting to remove directory: {path}")
+            logger.debug(f"Directory exists: {os.path.exists(path)}")
+            logger.debug(f"Directory is directory: {os.path.isdir(path) if os.path.exists(path) else 'N/A'}")
+        
         try:
             shutil.rmtree(path)
             if logger:
-                logger.info(REMOVED_DIRECTORY_MESSAGE.format(path=path))
+                logger.debug(REMOVED_DIRECTORY_MESSAGE.format(path=path))
+                logger.debug(f"Directory {path} removed successfully")
             return True
         except Exception as e:
             if logger:
+                logger.debug(f"Exception during directory removal: {type(e).__name__}: {str(e)}")
                 logger.error(FAILED_TO_REMOVE_DIRECTORY_MESSAGE.format(path=path, error=e))
             return False
 
