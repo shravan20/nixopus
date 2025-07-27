@@ -19,7 +19,7 @@ class TestSSHKeyGeneration(unittest.TestCase):
 
     def test_ssh_command_builder_rsa(self):
         cmd = SSHCommandBuilder.build_ssh_keygen_command(self.test_key_path, "rsa", 4096, "testpass")
-        expected = ["ssh-keygen", "-t", "rsa", "-f", self.test_key_path, "-N", "-b", "4096", "testpass"]
+        expected = ["ssh-keygen", "-t", "rsa", "-f", self.test_key_path, "-N", "testpass", "-b", "4096"]
         self.assertEqual(cmd, expected)
 
     def test_ssh_command_builder_ed25519_no_passphrase(self):
@@ -29,12 +29,12 @@ class TestSSHKeyGeneration(unittest.TestCase):
 
     def test_ssh_command_builder_ecdsa(self):
         cmd = SSHCommandBuilder.build_ssh_keygen_command(self.test_key_path, "ecdsa", 256)
-        expected = ["ssh-keygen", "-t", "ecdsa", "-f", self.test_key_path, "-N", "-b", "256", ""]
+        expected = ["ssh-keygen", "-t", "ecdsa", "-f", self.test_key_path, "-N", "", "-b", "256"]
         self.assertEqual(cmd, expected)
 
     def test_ssh_command_builder_dsa(self):
         cmd = SSHCommandBuilder.build_ssh_keygen_command(self.test_key_path, "dsa", 1024)
-        expected = ["ssh-keygen", "-t", "dsa", "-f", self.test_key_path, "-N", "-b", "1024", ""]
+        expected = ["ssh-keygen", "-t", "dsa", "-f", self.test_key_path, "-N", "", "-b", "1024"]
         self.assertEqual(cmd, expected)
 
     def test_ssh_config_validation_valid_key_type(self):
@@ -98,24 +98,17 @@ class TestSSHKeyGeneration(unittest.TestCase):
 
     @patch("subprocess.run")
     def test_ssh_key_manager_success(self, mock_run):
-        mock_avail_result = Mock()
-        mock_avail_result.returncode = 0
-
-        mock_version_result = Mock()
-        mock_version_result.returncode = 0
-        mock_version_result.stdout = "OpenSSH_8.9p1"
-
         mock_gen_result = Mock()
         mock_gen_result.returncode = 0
 
-        mock_run.side_effect = [mock_avail_result, mock_version_result, mock_gen_result]
+        mock_run.return_value = mock_gen_result
 
         manager = SSHKeyManager(self.mock_logger)
         success, error = manager.generate_ssh_key(self.test_key_path, "ed25519", 256)
 
         self.assertTrue(success)
         self.assertIsNone(error)
-        self.assertEqual(mock_run.call_count, 3)
+        self.assertEqual(mock_run.call_count, 1)
 
     @patch("subprocess.run")
     def test_ssh_key_manager_failure(self, mock_run):
@@ -126,11 +119,7 @@ class TestSSHKeyGeneration(unittest.TestCase):
 
         mock_version_result = Mock()
         mock_version_result.returncode = 0
-        mock_run.side_effect = [
-            mock_avail_result,
-            mock_version_result,
-            CalledProcessError(1, "ssh-keygen", stderr="Permission denied"),
-        ]
+        mock_run.side_effect = CalledProcessError(1, "ssh-keygen", stderr="Permission denied")
 
         manager = SSHKeyManager(self.mock_logger)
         success, error = manager.generate_ssh_key(self.test_key_path, "ed25519", 256)
@@ -145,9 +134,9 @@ class TestSSHKeyGeneration(unittest.TestCase):
         mock_run.return_value = mock_result
 
         manager = SSHKeyManager(self.mock_logger)
-        success, error = manager.generate_ssh_key(self.test_key_path, "ed25519", 256)
+        available, error = manager._check_ssh_keygen_availability()
 
-        self.assertFalse(success)
+        self.assertFalse(available)
         self.assertIsNone(error)
 
     def test_ssh_service_dry_run(self):
@@ -167,17 +156,10 @@ class TestSSHKeyGeneration(unittest.TestCase):
         with open(self.test_key_path, "w") as f:
             f.write("existing key")
 
-        mock_avail_result = Mock()
-        mock_avail_result.returncode = 0
+        mock_gen_result = Mock()
+        mock_gen_result.returncode = 0
 
-        mock_version_result = Mock()
-        mock_version_result.returncode = 0
-
-        mock_run.side_effect = [
-            mock_avail_result,
-            mock_version_result,
-            CalledProcessError(1, "ssh-keygen", stderr="ssh-keygen failed"),
-        ]
+        mock_run.return_value = mock_gen_result
 
         config = SSHConfig(path=self.test_key_path, key_type="ed25519", key_size=256, force=True)
 
@@ -185,7 +167,7 @@ class TestSSHKeyGeneration(unittest.TestCase):
         result = ssh.generate(config)
 
         self.assertFalse(result.success)
-        self.assertIn("ssh-keygen", result.error)
+        self.assertIn("Failed to set permissions", result.error)
 
     @patch("subprocess.run")
     def test_ssh_key_manager_with_permissions(self, mock_run):

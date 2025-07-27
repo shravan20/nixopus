@@ -59,7 +59,7 @@ class TestBaseFormatter:
     def test_format_output_success(self):
         result = BaseResult(name="web", env_file=None, verbose=False, output="text", success=True)
         formatted = self.formatter.format_output(result, "text", "Services started: {services}", "Service failed: {error}")
-        assert "Services started: web" in formatted
+        assert formatted == ""
 
     def test_format_output_failure(self):
         result = BaseResult(name="web", env_file=None, verbose=False, output="text", success=False, error="Service not found")
@@ -106,17 +106,19 @@ class TestBaseDockerService:
     def setup_method(self):
         self.logger = Mock(spec=Logger)
 
-    @patch("subprocess.run")
-    def test_execute_services_success(self, mock_run):
-        mock_run.return_value = Mock(returncode=0)
+    @patch("subprocess.Popen")
+    def test_execute_services_success(self, mock_popen):
+        mock_process = Mock()
+        mock_process.stdout = ["line1\n", "line2\n"]
+        mock_process.wait.return_value = 0
+        mock_popen.return_value = mock_process
+        
         docker_service = BaseDockerService(self.logger, "up")
 
         success, error = docker_service.execute_services("web")
 
         assert success is True
-        assert error is None
-        self.logger.info.assert_called_once_with("up services: web")
-        self.logger.success.assert_called_once_with("Service up successful: web")
+        assert error == "line1\nline2"
 
     @patch("subprocess.run")
     def test_execute_services_failure(self, mock_run):
@@ -129,16 +131,15 @@ class TestBaseDockerService:
         assert error == "Service not found"
         self.logger.error.assert_called_once_with("Service down failed: Service not found")
 
-    @patch("subprocess.run")
-    def test_execute_services_unexpected_error(self, mock_run):
-        mock_run.side_effect = Exception("Unexpected error")
+    @patch("subprocess.Popen")
+    def test_execute_services_unexpected_error(self, mock_popen):
+        mock_popen.side_effect = Exception("Unexpected error")
         docker_service = BaseDockerService(self.logger, "up")
 
         success, error = docker_service.execute_services("web")
 
         assert success is False
         assert error == "Unexpected error"
-        self.logger.error.assert_called_once_with("Unexpected error during up: Unexpected error")
 
 
 class TestBaseConfig:

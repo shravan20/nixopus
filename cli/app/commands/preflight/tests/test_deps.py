@@ -26,6 +26,7 @@ class MockLogger:
         self.warning_calls = []
         self.success_calls = []
         self.highlight_calls = []
+        self.verbose = True
 
     def debug(self, message: str) -> None:
         self.debug_calls.append(message)
@@ -52,33 +53,29 @@ class TestDependencyChecker(unittest.TestCase):
         self.mock_logger = MockLogger()
         self.checker = DependencyChecker(logger=self.mock_logger)
 
-    @patch("subprocess.run")
-    def test_check_dependency_available(self, mock_run):
-        mock_result = Mock()
-        mock_result.returncode = 0
-        mock_run.return_value = mock_result
+    @patch("shutil.which")
+    def test_check_dependency_available(self, mock_which):
+        mock_which.return_value = "/usr/bin/docker"
 
         result = self.checker.check_dependency("docker")
 
         self.assertTrue(result)
-        mock_run.assert_called_once_with(["command", "-v", "docker"], capture_output=True, text=True, timeout=1)
+        mock_which.assert_called_once_with("docker")
         self.assertEqual(len(self.mock_logger.debug_calls), 1)
         self.assertIn("docker", self.mock_logger.debug_calls[0])
 
-    @patch("subprocess.run")
-    def test_check_dependency_not_available(self, mock_run):
-        mock_result = Mock()
-        mock_result.returncode = 1
-        mock_run.return_value = mock_result
+    @patch("shutil.which")
+    def test_check_dependency_not_available(self, mock_which):
+        mock_which.return_value = None
 
         result = self.checker.check_dependency("nonexistent")
 
         self.assertFalse(result)
-        mock_run.assert_called_once_with(["command", "-v", "nonexistent"], capture_output=True, text=True, timeout=1)
+        mock_which.assert_called_once_with("nonexistent")
 
-    @patch("subprocess.run")
-    def test_check_dependency_timeout(self, mock_run):
-        mock_run.side_effect = subprocess.TimeoutExpired("command", 5)
+    @patch("shutil.which")
+    def test_check_dependency_timeout(self, mock_which):
+        mock_which.side_effect = subprocess.TimeoutExpired("command", 5)
 
         result = self.checker.check_dependency("slow_command")
 
@@ -86,9 +83,9 @@ class TestDependencyChecker(unittest.TestCase):
         self.assertEqual(len(self.mock_logger.error_calls), 1)
         self.assertIn("slow_command", self.mock_logger.error_calls[0])
 
-    @patch("subprocess.run")
-    def test_check_dependency_exception(self, mock_run):
-        mock_run.side_effect = Exception("Test exception")
+    @patch("shutil.which")
+    def test_check_dependency_exception(self, mock_which):
+        mock_which.side_effect = Exception("Test exception")
 
         result = self.checker.check_dependency("failing_command")
 

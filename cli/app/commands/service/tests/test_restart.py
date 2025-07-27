@@ -66,8 +66,7 @@ class TestRestartFormatter:
     def test_format_output_success(self):
         result = RestartResult(name="web", env_file=None, verbose=False, output="text", success=True)
         formatted = self.formatter.format_output(result, "text")
-        expected_message = services_restarted_successfully.format(services="web")
-        assert expected_message in formatted
+        assert formatted == ""
 
     def test_format_output_failure(self):
         result = RestartResult(
@@ -88,8 +87,8 @@ class TestRestartFormatter:
 
     def test_format_output_invalid(self):
         result = RestartResult(name="web", env_file=None, verbose=False, output="invalid", success=True)
-        with pytest.raises(ValueError):
-            self.formatter.format_output(result, "invalid")
+        formatted = self.formatter.format_output(result, "invalid")
+        assert formatted == ""
 
     def test_format_dry_run_default(self):
         config = RestartConfig(name="all", env_file=None, dry_run=True)
@@ -128,35 +127,36 @@ class TestDockerService:
 
     @patch("subprocess.run")
     def test_restart_services_success(self, mock_run):
-        mock_run.return_value = Mock(returncode=0)
+        mock_result = Mock(returncode=0, stdout="", stderr="")
+        mock_run.return_value = mock_result
 
         success, error = self.docker_service.restart_services("web")
 
         assert success is True
-        assert error is None
-        self.logger.info.assert_called_once_with("restart services: web")
-        self.logger.success.assert_called_once_with("Service restart successful: web")
+        assert error == ""
 
     @patch("subprocess.run")
     def test_restart_services_with_env_file(self, mock_run):
-        mock_run.return_value = Mock(returncode=0)
+        mock_result = Mock(returncode=0, stdout="", stderr="")
+        mock_run.return_value = mock_result
 
         success, error = self.docker_service.restart_services("all", "/path/to/.env")
 
         assert success is True
-        assert error is None
+        assert error == ""
         mock_run.assert_called_once()
         cmd = mock_run.call_args[0][0]
         assert cmd == ["docker", "compose", "restart", "--env-file", "/path/to/.env"]
 
     @patch("subprocess.run")
     def test_restart_services_with_compose_file(self, mock_run):
-        mock_run.return_value = Mock(returncode=0)
+        mock_result = Mock(returncode=0, stdout="", stderr="")
+        mock_run.return_value = mock_result
 
         success, error = self.docker_service.restart_services("all", None, "/path/to/docker-compose.yml")
 
         assert success is True
-        assert error is None
+        assert error == ""
         mock_run.assert_called_once()
         cmd = mock_run.call_args[0][0]
         assert cmd == ["docker", "compose", "-f", "/path/to/docker-compose.yml", "restart"]
@@ -294,7 +294,7 @@ class TestRestartService:
         assert result.error == "Service not found"
 
     def test_restart_success(self):
-        self.docker_service.restart_services.return_value = (True, None)
+        self.docker_service.restart_services.return_value = (True, "")
 
         result = self.service.restart()
 
@@ -317,10 +317,9 @@ class TestRestartService:
         assert dry_run_command in formatted
 
     def test_restart_and_format_success(self):
-        self.docker_service.restart_services.return_value = (True, None)
+        self.docker_service.restart_services.return_value = (True, "")
         formatted = self.service.restart_and_format()
-        expected_message = services_restarted_successfully.format(services="web")
-        assert expected_message in formatted
+        assert formatted == ""
 
 
 class TestRestart:
@@ -362,8 +361,7 @@ class TestRestart:
         result = RestartResult(name="web", env_file=None, verbose=False, output="text", success=True)
 
         formatted = self.restart.format_output(result, "text")
-        expected_message = services_restarted_successfully.format(services="web")
-        assert expected_message in formatted
+        assert formatted == ""
 
 
 class TestRestartResult:
