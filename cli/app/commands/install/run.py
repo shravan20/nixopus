@@ -7,7 +7,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskPr
 from app.utils.protocols import LoggerProtocol
 from app.utils.config import Config, VIEW_ENV_FILE, API_ENV_FILE, DEFAULT_REPO, DEFAULT_BRANCH, DEFAULT_PATH, NIXOPUS_CONFIG_DIR, PORTS, DEFAULT_COMPOSE_FILE, PROXY_PORT, SSH_KEY_TYPE, SSH_KEY_SIZE, SSH_FILE_PATH, VIEW_PORT, API_PORT, DOCKER_PORT, CADDY_CONFIG_VOLUME
 from app.utils.timeout import TimeoutWrapper
-from app.commands.preflight.port import PortConfig, PortService
+from app.commands.preflight.run import PreflightRunner
 from app.commands.clone.clone import Clone, CloneConfig
 from app.utils.lib import HostInformation, FileManager
 from app.commands.conf.base import BaseEnvironmentManager
@@ -16,11 +16,11 @@ from app.commands.service.up import Up, UpConfig
 from app.commands.proxy.load import Load, LoadConfig
 from .ssh import SSH, SSHConfig
 from .messages import (
-    installation_failed, ports_unavailable, installing_nixopus,
+    installation_failed, installing_nixopus,
     dependency_installation_timeout,
     clone_failed, env_file_creation_failed, env_file_permissions_failed, 
     proxy_config_created, ssh_setup_failed, services_start_failed, proxy_load_failed,
-    operation_timed_out, created_env_file, config_file_not_found, configuration_key_has_no_default_value
+    operation_timed_out, created_env_file, configuration_key_has_no_default_value
 )
 from .deps import install_all_deps
 
@@ -53,8 +53,6 @@ DEFAULTS = {
     'docker_port': _config.get_yaml_value(DOCKER_PORT),
 }
 
-def get_config_value(key: str, provided_value=None):
-    return provided_value if provided_value is not None else DEFAULTS.get(key)
 
 class Install:
     def __init__(self, logger: LoggerProtocol = None, verbose: bool = False, timeout: int = 300, force: bool = False, dry_run: bool = False, config_file: str = None, api_domain: str = None, view_domain: str = None):
@@ -66,48 +64,16 @@ class Install:
         self.config_file = config_file
         self.api_domain = api_domain
         self.view_domain = view_domain
-        self._config_cache = {}
-        self._user_config = self._load_user_config()
+        self._user_config = _config.load_user_config(self.config_file)
         self.progress = None
         self.main_task = None
         self._validate_domains()
     
-    def _load_user_config(self):
-        if not self.config_file:
-            return {}
-        
-        try:
-            if not os.path.exists(self.config_file):
-                raise FileNotFoundError(config_file_not_found.format(config_file=self.config_file))
-            
-            with open(self.config_file, 'r') as f:
-                user_config = yaml.safe_load(f)
-            
-            flattened = {}
-            self._flatten_config(user_config, flattened)
-            return flattened
-        except Exception as e:
-            if self.logger:
-                self.logger.error(f"{config_file_not_found}: {str(e)}")
-            raise
-    
-    def _flatten_config(self, config, result, prefix=""):
-        for key, value in config.items():
-            new_key = f"{prefix}.{key}" if prefix else key
-            if isinstance(value, dict):
-                self._flatten_config(value, result, new_key)
-            else:
-                result[new_key] = value
-    
     def _get_config(self, key: str):
-        if key not in self._config_cache:
-            user_value = self._get_user_config_value(key)
-            value = user_value if user_value is not None else DEFAULTS.get(key)
-            
-            if value is None and key not in ['ssh_passphrase']:
-                raise ValueError(configuration_key_has_no_default_value.format(key=key))
-            self._config_cache[key] = value
-        return self._config_cache[key]
+        try:
+            return _config.get_config_value(key, self._user_config, DEFAULTS)
+        except ValueError:
+            raise ValueError(configuration_key_has_no_default_value.format(key=key))
     
     def _validate_domains(self):
         if (self.api_domain is None) != (self.view_domain is None):
@@ -118,21 +84,6 @@ class Install:
             if not domain_pattern.match(self.api_domain) or not domain_pattern.match(self.view_domain):
                 raise ValueError("Invalid domain format. Domains must be valid hostnames")
 
-    def _get_user_config_value(self, key: str):
-        key_mappings = {
-            'proxy_port': 'services.caddy.env.PROXY_PORT',
-            'repo_url': 'clone.repo',
-            'branch_name': 'clone.branch',
-            'source_path': 'clone.source-path',
-            'config_dir': 'nixopus-config-dir',
-            'api_env_file_path': 'services.api.env.API_ENV_FILE',
-            'view_env_file_path': 'services.view.env.VIEW_ENV_FILE',
-            'compose_file': 'compose-file-path',
-            'required_ports': 'ports'
-        }
-        
-        config_path = key_mappings.get(key, key)
-        return self._user_config.get(config_path)
 
     def run(self):
         steps = [
@@ -187,13 +138,12 @@ class Install:
             self.logger.error(f"{installation_failed}{context_msg}")
 
     def _run_preflight_checks(self):
-        port_config = PortConfig(ports=self._get_config('required_ports'), host="localhost", verbose=self.verbose)
-        port_service = PortService(port_config, logger=self.logger)
-        port_results = port_service.check_ports()
-        unavailable_ports = [result for result in port_results if not result.get('is_available', True)]
-        if unavailable_ports:
-            error_msg = f"{ports_unavailable}: {[p['port'] for p in unavailable_ports]}"
-            raise Exception(error_msg)
+        preflight_runner = PreflightRunner(logger=self.logger, verbose=self.verbose)
+        preflight_runner.check_ports_from_config(
+            config_key='required_ports', 
+            user_config=self._user_config, 
+            defaults=DEFAULTS
+        )
 
     def _install_dependencies(self):
         try:

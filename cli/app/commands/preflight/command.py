@@ -5,6 +5,7 @@ from app.utils.logger import Logger
 from app.utils.timeout import TimeoutWrapper
 
 from .deps import Deps, DepsConfig
+from .run import PreflightRunner
 from .messages import (
     debug_starting_preflight_check,
     debug_preflight_check_completed,
@@ -51,6 +52,8 @@ def check(
         
         logger.debug(debug_timeout_wrapper_start.format(timeout=timeout))
         with TimeoutWrapper(timeout):
+            preflight_runner = PreflightRunner(logger=logger, verbose=verbose)
+            preflight_runner.check_ports_from_config()
             logger.debug(debug_timeout_wrapper_end)
             logger.debug(debug_preflight_check_completed)
         
@@ -62,7 +65,6 @@ def check(
         if not isinstance(e, typer.Exit):
             logger.error(f"Unexpected error during preflight check: {e}")
         raise typer.Exit(1)
-
 
 @preflight_app.command()
 def ports(

@@ -8,6 +8,7 @@ class Config:
     def __init__(self, default_env="PRODUCTION"):
         self.default_env = default_env
         self._yaml_config = None
+        self._cache = {}
         
         # Check if running as PyInstaller bundle
         if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
@@ -45,6 +46,58 @@ class Config:
         config = self.get_yaml_value(service_env_path)
         return {key: expand_env_placeholders(value) for key, value in config.items()}
 
+    def load_user_config(self, config_file: str):
+        """Load and parse user config file, returning flattened config dict."""
+        if not config_file:
+            return {}
+        
+        if not os.path.exists(config_file):
+            raise FileNotFoundError(f"Config file not found: {config_file}")
+        
+        with open(config_file, 'r') as f:
+            user_config = yaml.safe_load(f)
+        
+        flattened = {}
+        self.flatten_config(user_config, flattened)
+        return flattened
+
+    def flatten_config(self, config: dict, result: dict, prefix: str = ""):
+        """Flatten nested config dict into dot notation keys."""
+        for key, value in config.items():
+            new_key = f"{prefix}.{key}" if prefix else key
+            if isinstance(value, dict):
+                self.flatten_config(value, result, new_key)
+            else:
+                result[new_key] = value
+
+    def get_config_value(self, key: str, user_config: dict, defaults: dict):
+        """Get config value from user config with fallback to defaults and caching."""
+        if key in self._cache:
+            return self._cache[key]
+        
+        # Key mappings for user config lookup
+        key_mappings = {
+            'proxy_port': 'services.caddy.env.PROXY_PORT',
+            'repo_url': 'clone.repo',
+            'branch_name': 'clone.branch',
+            'source_path': 'clone.source-path',
+            'config_dir': 'nixopus-config-dir',
+            'api_env_file_path': 'services.api.env.API_ENV_FILE',
+            'view_env_file_path': 'services.view.env.VIEW_ENV_FILE',
+            'compose_file': 'compose-file-path',
+            'required_ports': 'ports'
+        }
+        
+        config_path = key_mappings.get(key, key)
+        user_value = user_config.get(config_path)
+        value = user_value if user_value is not None else defaults.get(key)
+        
+        if value is None and key not in ['ssh_passphrase']:
+            raise ValueError(f"Configuration key '{key}' has no default value")
+        
+        self._cache[key] = value
+        return value
+
 
 def expand_env_placeholders(value: str) -> str:
     # Expand environment placeholders in the form ${ENV_VAR:-default}
@@ -78,3 +131,4 @@ VIEW_PORT = "services.view.env.NEXT_PUBLIC_PORT"
 API_PORT = "services.api.env.PORT"
 CADDY_CONFIG_VOLUME = "services.caddy.env.CADDY_CONFIG_VOLUME"
 DOCKER_PORT = "services.api.env.DOCKER_PORT"
+
