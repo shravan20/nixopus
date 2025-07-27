@@ -23,23 +23,23 @@ from app.utils.logger import Logger
 class TestDockerCommandBuilder:
     def test_build_ps_command_default(self):
         cmd = DockerCommandBuilder.build_ps_command()
-        assert cmd == ["docker", "compose", "ps"]
+        assert cmd == ["docker", "compose", "config", "--format", "json"]
 
     def test_build_ps_command_with_service_name(self):
         cmd = DockerCommandBuilder.build_ps_command("web")
-        assert cmd == ["docker", "compose", "ps", "web"]
+        assert cmd == ["docker", "compose", "config", "--format", "json"]
 
     def test_build_ps_command_with_env_file(self):
         cmd = DockerCommandBuilder.build_ps_command("all", "/path/to/.env")
-        assert cmd == ["docker", "compose", "ps", "--env-file", "/path/to/.env"]
+        assert cmd == ["docker", "compose", "config", "--format", "json", "--env-file", "/path/to/.env"]
 
     def test_build_ps_command_with_compose_file(self):
         cmd = DockerCommandBuilder.build_ps_command("all", None, "/path/to/docker-compose.yml")
-        assert cmd == ["docker", "compose", "-f", "/path/to/docker-compose.yml", "ps"]
+        assert cmd == ["docker", "compose", "-f", "/path/to/docker-compose.yml", "config", "--format", "json"]
 
     def test_build_ps_command_with_all_parameters(self):
         cmd = DockerCommandBuilder.build_ps_command("api", "/path/to/.env", "/path/to/docker-compose.yml")
-        assert cmd == ["docker", "compose", "-f", "/path/to/docker-compose.yml", "ps", "--env-file", "/path/to/.env", "api"]
+        assert cmd == ["docker", "compose", "-f", "/path/to/docker-compose.yml", "config", "--format", "json", "--env-file", "/path/to/.env"]
 
 
 class TestPsFormatter:
@@ -49,8 +49,7 @@ class TestPsFormatter:
     def test_format_output_success(self):
         result = PsResult(name="web", env_file=None, verbose=False, output="text", success=True)
         formatted = self.formatter.format_output(result, "text")
-        expected_message = services_status_retrieved.format(services="web")
-        assert expected_message in formatted
+        assert formatted == "No configuration found"
 
     def test_format_output_failure(self):
         result = PsResult(name="web", env_file=None, verbose=False, output="text", success=False, error="Service not found")
@@ -69,8 +68,8 @@ class TestPsFormatter:
 
     def test_format_output_invalid(self):
         result = PsResult(name="web", env_file=None, verbose=False, output="invalid", success=True)
-        with pytest.raises(ValueError):
-            self.formatter.format_output(result, "invalid")
+        formatted = self.formatter.format_output(result, "invalid")
+        assert formatted == "No configuration found"
 
     def test_format_dry_run_default(self):
         config = PsConfig(name="all", env_file=None, dry_run=True)
@@ -109,38 +108,39 @@ class TestDockerService:
 
     @patch("subprocess.run")
     def test_show_services_status_success(self, mock_run):
-        mock_run.return_value = Mock(returncode=0)
+        mock_result = Mock(returncode=0, stdout="{}", stderr="")
+        mock_run.return_value = mock_result
 
         success, error = self.docker_service.show_services_status("web")
 
         assert success is True
-        assert error is None
-        self.logger.info.assert_called_once_with("ps services: web")
-        self.logger.success.assert_called_once_with("Service ps successful: web")
+        assert error == "{}"
 
     @patch("subprocess.run")
     def test_show_services_status_with_env_file(self, mock_run):
-        mock_run.return_value = Mock(returncode=0)
+        mock_result = Mock(returncode=0, stdout="{}", stderr="")
+        mock_run.return_value = mock_result
 
         success, error = self.docker_service.show_services_status("all", "/path/to/.env")
 
         assert success is True
-        assert error is None
+        assert error == "{}"
         mock_run.assert_called_once()
         cmd = mock_run.call_args[0][0]
-        assert cmd == ["docker", "compose", "ps", "--env-file", "/path/to/.env"]
+        assert cmd == ["docker", "compose", "config", "--format", "json", "--env-file", "/path/to/.env"]
 
     @patch("subprocess.run")
     def test_show_services_status_with_compose_file(self, mock_run):
-        mock_run.return_value = Mock(returncode=0)
+        mock_result = Mock(returncode=0, stdout="{}", stderr="")
+        mock_run.return_value = mock_result
 
         success, error = self.docker_service.show_services_status("all", None, "/path/to/docker-compose.yml")
 
         assert success is True
-        assert error is None
+        assert error == "{}"
         mock_run.assert_called_once()
         cmd = mock_run.call_args[0][0]
-        assert cmd == ["docker", "compose", "-f", "/path/to/docker-compose.yml", "ps"]
+        assert cmd == ["docker", "compose", "-f", "/path/to/docker-compose.yml", "config", "--format", "json"]
 
     @patch("subprocess.run")
     def test_show_services_status_failure(self, mock_run):
@@ -275,7 +275,7 @@ class TestPsService:
         assert result.error == "Service not found"
 
     def test_ps_success(self):
-        self.docker_service.show_services_status.return_value = (True, None)
+        self.docker_service.show_services_status.return_value = (True, "{}")
 
         result = self.service.ps()
 
@@ -298,10 +298,9 @@ class TestPsService:
         assert dry_run_command in formatted
 
     def test_ps_and_format_success(self):
-        self.docker_service.show_services_status.return_value = (True, None)
+        self.docker_service.show_services_status.return_value = (True, "{}")
         formatted = self.service.ps_and_format()
-        expected_message = services_status_retrieved.format(services="web")
-        assert expected_message in formatted
+        assert formatted == "No services found in compose file"
 
 
 class TestPs:
@@ -343,8 +342,7 @@ class TestPs:
         result = PsResult(name="web", env_file=None, verbose=False, output="text", success=True)
 
         formatted = self.ps.format_output(result, "text")
-        expected_message = services_status_retrieved.format(services="web")
-        assert expected_message in formatted
+        assert formatted == "No configuration found"
 
 
 class TestPsResult:

@@ -191,8 +191,8 @@ class TestListService:
         data = json.loads(output)
 
         assert data["success"] is True
-        assert data["message"] == "Configuration listed successfully for service: api"
-        assert data["data"] == {"KEY1": "value1"}
+        assert data["service"] == "api"
+        assert data["config"] == {"KEY1": "value1"}
 
     def test_format_output_text_success(self):
         result = ListResult(
