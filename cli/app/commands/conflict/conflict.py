@@ -26,10 +26,24 @@ from .messages import (
     supported_version_formats_info,
     unsupported_version_format_warning,
     no_deps_found_warning,
+    no_version_conflicts_message,
 )
 
 
 class VersionParser:
+
+    @staticmethod
+    def is_major_minor_format(requirement: str) -> bool:
+        """Check if the requirement is in major.minor format (e.g., '1.20')."""
+        return bool(re.match(r"^\d+\.\d+$", requirement))
+
+    @staticmethod
+    def _search_version(pattern: str, output: str, flags: int = re.IGNORECASE) -> Optional[str]:
+        """Helper to search for a version pattern and return group(1) if found."""
+        if match := re.search(pattern, output, flags):
+            return match.group(1)
+        return None
+
     """Utility class for parsing and comparing versions."""
 
     # Version pattern mappings for different tools
@@ -60,48 +74,41 @@ class VersionParser:
         try:
             # Common version patterns
             for pattern in VersionParser.VERSION_PATTERNS:
-                match = re.search(pattern, output, re.IGNORECASE)
-                if match:
-                    return match.group(1)
+                if version := VersionParser._search_version(pattern, output):
+                    return version
 
             # Tool-specific parsing for unique output formats
             if tool == "go":
                 # "go version go1.20.3 darwin/amd64" -> "1.20.3"
-                match = re.search(r"go(\d+\.\d+\.\d+)", output)
-                if match:
-                    return match.group(1)
+                if version := VersionParser._search_version(r"go(\d+\.\d+\.\d+)", output, 0):
+                    return version
 
             elif tool == "curl":
                 # "curl 7.53.1 (x86_64-apple-darwin14.5.0)..." -> "7.53.1"
-                match = re.search(r"curl\s+(\d+\.\d+\.\d+)", output)
-                if match:
-                    return match.group(1)
+                if version := VersionParser._search_version(r"curl\s+(\d+\.\d+\.\d+)", output, 0):
+                    return version
 
             elif tool == "ssh" or tool == "open-ssh":
                 # "OpenSSH_9.8p1, LibreSSL 3.3.6" -> "9.8.1"
-                match = re.search(r"OpenSSH_(\d+\.\d+)(?:p(\d+))?", output)
-                if match:
+                if match := re.search(r"OpenSSH_(\d+\.\d+)(?:p(\d+))?", output):
                     major_minor = match.group(1)
                     patch = match.group(2) or "0"
                     return f"{major_minor}.{patch}"
 
             elif tool == "redis":
                 # "Redis server v=7.0.11 sha=00000000:0..." -> "7.0.11"
-                match = re.search(r"v=(\d+\.\d+\.\d+)", output)
-                if match:
-                    return match.group(1)
+                if version := VersionParser._search_version(r"v=(\d+\.\d+\.\d+)", output, 0):
+                    return version
 
             elif tool == "postgresql" or tool == "psql":
                 # "psql (PostgreSQL) 14.9" -> "14.9"
-                match = re.search(r"PostgreSQL\)\s+(\d+\.\d+)", output)
-                if match:
-                    return match.group(1)
+                if version := VersionParser._search_version(r"PostgreSQL\)\s+(\d+\.\d+)", output, 0):
+                    return version
 
             elif tool == "air":
                 # Air might have specific format, keeping flexible for now
-                match = re.search(r"(\d+\.\d+\.\d+)", output)
-                if match:
-                    return match.group(1)
+                if version := VersionParser._search_version(r"(\d+\.\d+\.\d+)", output, 0):
+                    return version
 
             return None
         except Exception as e:
@@ -146,7 +153,7 @@ class VersionParser:
             return requirement
 
         # Handle major.minor format (e.g., "1.20" -> ">=1.20.0, <1.21.0")
-        if re.match(r"^\d+\.\d+$", requirement):
+        if VersionParser.is_major_minor_format(requirement):
             try:
                 parts = requirement.split(".")
                 major, minor = int(parts[0]), int(parts[1])
@@ -178,7 +185,7 @@ class VersionParser:
             return True
 
         # Check for major.minor format
-        if re.match(r"^\d+\.\d+$", requirement):
+        if VersionParser.is_major_minor_format(requirement):
             return True
 
         # Check for exact version format
@@ -377,7 +384,7 @@ class ConflictFormatter:
     def format_output(self, data: List[ConflictCheckResult], output_type: str) -> str:
         """Format conflict check results."""
         if not data:
-            message = self.output_formatter.create_success_message("No version conflicts to check")
+            message = self.output_formatter.create_success_message(no_version_conflicts_message)
             return self.output_formatter.format_output(message, output_type)
 
         messages = []

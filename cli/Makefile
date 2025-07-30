@@ -46,6 +46,10 @@ publish: ## Publish to PyPI
 dev: ## Activate development shell
 	@poetry shell
 
+
+# -----------------------------------------------------------------------------
+# Nixopus test CLI commands
+# -----------------------------------------------------------------------------
 nixopus: ## Run nixopus CLI
 	@if [ -z "$(ARGS)" ]; then \
 		poetry run nixopus --help; \
