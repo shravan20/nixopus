@@ -52,3 +52,8 @@ dev:
 
 run: 
 	poetry run nixopus
+
+generate-docs:
+	typer app.main utils docs --output
+      ../docs/cli/cli-reference.md --name
+      nixopus

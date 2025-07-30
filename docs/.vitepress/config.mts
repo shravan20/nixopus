@@ -98,6 +98,7 @@ export default withMermaid(
                 { text: 'test', link: '/cli/commands/test.md' }
               ]
             },
+            { text: 'Reference', link: '/cli/cli-reference.md' },
             { text: 'Development', link: '/cli/development.md' }
           ]
         },
