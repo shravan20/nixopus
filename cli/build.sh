@@ -145,7 +145,7 @@ build_wheel() {
 }
 
 build_binary() {
-    log_info "Building binary in directory mode for fast startup..."
+    log_info "Building binary"
     
     poetry run pyinstaller --clean --noconfirm $SPEC_FILE
     
@@ -159,20 +159,19 @@ build_binary() {
     
     BINARY_DIR_NAME="${APP_NAME}_${OS}_${ARCH}"
     
-    # PyInstaller creates a directory in dist/nixopus/
-    if [[ -d "$BUILD_DIR/$APP_NAME" ]]; then
-        # Rename the directory to include platform info
+    
+    if [[ -d "$BUILD_DIR/$APP_NAME" ]]; then        
         mv "$BUILD_DIR/$APP_NAME" "$BUILD_DIR/$BINARY_DIR_NAME"
+
         
-        # Create a wrapper script for convenience
         cat > "$BUILD_DIR/$APP_NAME" << EOF
 #!/bin/bash
-# Nixopus CLI wrapper script
+# Nixopus CLI wrapper
 SCRIPT_DIR="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
 exec "\$SCRIPT_DIR/$BINARY_DIR_NAME/$APP_NAME" "\$@"
 EOF
         chmod +x "$BUILD_DIR/$APP_NAME"
-        
+
         log_success "Binary directory built: $BUILD_DIR/$BINARY_DIR_NAME/"
         log_success "Wrapper script created: $BUILD_DIR/$APP_NAME"
     else
@@ -182,9 +181,9 @@ EOF
 }
 
 test_binary() {
-    log_info "Testing binary..."
     
-    # Test the wrapper script
+    log_info "Testing binary..."
+
     WRAPPER_PATH="$BUILD_DIR/$APP_NAME"
     
     if [[ -f "$WRAPPER_PATH" ]]; then
@@ -218,17 +217,13 @@ create_release_archive() {
     
     cd $BUILD_DIR
     
-    # Archive the directory and wrapper script
-    if [[ -d "$BINARY_DIR_NAME" && -f "$APP_NAME" ]]; then
-        if [[ "$OS" == "darwin" || "$OS" == "linux" ]]; then
-            tar -czf "${ARCHIVE_NAME}.tar.gz" "$BINARY_DIR_NAME" "$APP_NAME"
-            log_success "Archive created: $BUILD_DIR/${ARCHIVE_NAME}.tar.gz"
-        elif [[ "$OS" == "mingw"* || "$OS" == "cygwin"* || "$OS" == "msys"* ]]; then
-            zip -r "${ARCHIVE_NAME}.zip" "$BINARY_DIR_NAME" "$APP_NAME"
-            log_success "Archive created: $BUILD_DIR/${ARCHIVE_NAME}.zip"
-        fi
-    else
-        log_error "Binary directory or wrapper not found for archiving"
+
+    if [[ "$OS" == "darwin" || "$OS" == "linux" ]]; then
+        tar -czf "${ARCHIVE_NAME}.tar.gz" "$BINARY_DIR_NAME" "$APP_NAME"
+        log_success "Archive created: $BUILD_DIR/${ARCHIVE_NAME}.tar.gz"
+    elif [[ "$OS" == "mingw"* || "$OS" == "cygwin"* || "$OS" == "msys"* ]]; then
+        zip -r "${ARCHIVE_NAME}.zip" "$BINARY_DIR_NAME" "$APP_NAME"
+        log_success "Archive created: $BUILD_DIR/${ARCHIVE_NAME}.zip"
     fi
     
     cd ..
