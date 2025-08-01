@@ -65,3 +65,9 @@ preflight: ## Run preflight command
 
 version: ## Show version
 	@poetry run nixopus version
+
+run: ## Run nixopus CLI directly
+	poetry run nixopus
+
+generate-docs: ## Generate CLI documentation
+	typer app.main utils docs --output ../docs/cli/cli-reference.md --name nixopus
