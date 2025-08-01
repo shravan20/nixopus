@@ -1,27 +1,46 @@
+import os
+import time
+
+startup_time = time.time()
+DEBUG_TIMING = os.environ.get("NIXOPUS_DEBUG_TIMING", "").lower() == "true"
+
+
+# TODO: @shravan20 Keeping it for now, can remove once ince impl for lazy loading for cmd modules
+def log_timing(message):
+    if DEBUG_TIMING:
+        elapsed = time.time() - startup_time
+        print(f"[TIMING] {elapsed:.3f}s - {message}")
+
+
+log_timing("Interpreter started")
+
 import typer
+
+log_timing("Imported typer")
+
 from importlib.metadata import version as get_version
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
-from app.commands.clone.command import clone_app
-from app.commands.conf.command import conf_app
-from app.commands.install.command import install_app
-from app.commands.preflight.command import preflight_app
-from app.commands.proxy.command import proxy_app
-from app.commands.service.command import service_app
-from app.commands.test.command import test_app
-from app.commands.uninstall.command import uninstall_app
-from app.commands.version.command import main_version_callback, version_app
-from app.commands.version.version import VersionCommand
+log_timing("Imported core dependencies")
+
+# Import only what's needed for --version callback
+from app.commands.version.command import main_version_callback
+
+log_timing("Imported version callback only")
+
 from app.utils.message import application_add_completion, application_description, application_name, application_version_help
 from app.utils.config import Config
+
+log_timing("Imported utilities")
 
 app = typer.Typer(
     name=application_name,
     help=application_description,
     add_completion=application_add_completion,
 )
+log_timing("Created Typer app")
 
 
 @app.callback(invoke_without_command=True)
@@ -33,11 +52,11 @@ def main(
         "-v",
         callback=main_version_callback,
         help=application_version_help,
-    )
+    ),
 ):
     if ctx.invoked_subcommand is None:
         console = Console()
-        
+
         ascii_art = """
   _   _ _ _                           
  | \\ | (_)                          
@@ -48,24 +67,24 @@ def main(
                    | |              
                    |_|              
         """
-        
+
         text = Text(ascii_art, style="bold cyan")
         panel = Panel(text, title="[bold white]Welcome to[/bold white]", border_style="cyan", padding=(1, 2))
-        
+
         console.print(panel)
-        
+
         cli_version = get_version("nixopus")
         version_text = Text()
         version_text.append("Version: ", style="bold white")
         version_text.append(f"v{cli_version}", style="green")
-        
+
         description_text = Text()
         description_text.append(application_description, style="dim")
-        
+
         console.print(version_text)
         console.print(description_text)
         console.print()
-        
+
         help_text = Text()
         help_text.append("Run ", style="dim")
         help_text.append("nixopus --help", style="bold green")
@@ -73,6 +92,20 @@ def main(
         console.print(help_text)
         console.print()
 
+
+from app.commands.clone.command import clone_app
+from app.commands.conf.command import conf_app
+from app.commands.install.command import install_app
+from app.commands.preflight.command import preflight_app
+from app.commands.proxy.command import proxy_app
+from app.commands.service.command import service_app
+from app.commands.test.command import test_app
+from app.commands.uninstall.command import uninstall_app
+from app.commands.version.command import version_app
+
+log_timing("Imported all command modules")
+
+# Register all commands
 app.add_typer(preflight_app, name="preflight")
 app.add_typer(clone_app, name="clone")
 app.add_typer(conf_app, name="conf")
@@ -82,9 +115,14 @@ app.add_typer(install_app, name="install")
 app.add_typer(uninstall_app, name="uninstall")
 app.add_typer(version_app, name="version")
 
+log_timing("Registered all commands")
+
 config = Config()
 if config.is_development():
     app.add_typer(test_app, name="test")
+log_timing("Config checked and app fully initialized")
 
 if __name__ == "__main__":
+    log_timing("About to run app")
     app()
+    log_timing("App finished")
