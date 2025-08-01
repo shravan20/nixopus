@@ -25,7 +25,7 @@ from rich.text import Text
 
 log_timing("Imported core dependencies")
 
-# Import only what's needed for --version callback
+
 from app.commands.version.command import main_version_callback
 
 log_timing("Imported version callback only")
@@ -40,6 +40,7 @@ app = typer.Typer(
     help=application_description,
     add_completion=application_add_completion,
 )
+
 log_timing("Created Typer app")
 
 
@@ -60,8 +61,8 @@ def main(
         ascii_art = """
   _   _ _ _                           
  | \\ | (_)                          
- |  \\| |___  _____  _ __  _   _ ___ 
- | . ` | \\ \\/ / _ \\| '_ \\| | | / __|
+ |  \\| |___  _____  _ __  _   _ ___ ____
+ | . `  | \\ \\/ / _ \\| '_ \\| | | / __|
  | |\\  | |>  < (_) | |_) | |_| \\__ \\
  |_| \\_|_/_/\\_\\___/| .__/ \\__,_|___/
                    | |              
@@ -105,7 +106,6 @@ from app.commands.version.command import version_app
 
 log_timing("Imported all command modules")
 
-# Register all commands
 app.add_typer(preflight_app, name="preflight")
 app.add_typer(clone_app, name="clone")
 app.add_typer(conf_app, name="conf")
