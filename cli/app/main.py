@@ -76,7 +76,6 @@ def main(
         help_text.append("nixopus --help", style="bold green")
         help_text.append(" to explore all available commands", style="dim")
         console.print(help_text)
-        console.print()
 
 
 app.add_typer(preflight_app, name="preflight")
