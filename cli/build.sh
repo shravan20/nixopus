@@ -104,10 +104,8 @@ pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
     [],
+    exclude_binaries=True,
     name='nixopus',
     debug=False,
     bootloader_ignore_signals=False,
@@ -121,6 +119,17 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name='nixopus'
 )
 EOF
     
@@ -136,7 +145,7 @@ build_wheel() {
 }
 
 build_binary() {
-    log_info "Building binary..."
+    log_info "Building binary in directory mode for fast startup..."
     
     poetry run pyinstaller --clean --noconfirm $SPEC_FILE
     
@@ -148,53 +157,47 @@ build_binary() {
         aarch64|arm64) ARCH="arm64" ;;
     esac
     
-    BINARY_NAME="${APP_NAME}_${OS}_${ARCH}"
+    BINARY_DIR_NAME="${APP_NAME}_${OS}_${ARCH}"
     
-    if [[ "$OS" == "darwin" || "$OS" == "linux" ]]; then
-        if [[ -f "$BUILD_DIR/$APP_NAME" ]]; then
-            mv $BUILD_DIR/$APP_NAME $BUILD_DIR/$BINARY_NAME
-            ln -sf "$BINARY_NAME" "$BUILD_DIR/$APP_NAME"
-        fi
-    elif [[ "$OS" == "mingw"* || "$OS" == "cygwin"* || "$OS" == "msys"* ]]; then
-        if [[ -f "$BUILD_DIR/${APP_NAME}.exe" ]]; then
-            mv $BUILD_DIR/${APP_NAME}.exe $BUILD_DIR/${BINARY_NAME}.exe
-            cp "$BUILD_DIR/${BINARY_NAME}.exe" "$BUILD_DIR/${APP_NAME}.exe"
-        fi
+    # PyInstaller creates a directory in dist/nixopus/
+    if [[ -d "$BUILD_DIR/$APP_NAME" ]]; then
+        # Rename the directory to include platform info
+        mv "$BUILD_DIR/$APP_NAME" "$BUILD_DIR/$BINARY_DIR_NAME"
+        
+        # Create a wrapper script for convenience
+        cat > "$BUILD_DIR/$APP_NAME" << EOF
+#!/bin/bash
+# Nixopus CLI wrapper script
+SCRIPT_DIR="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
+exec "\$SCRIPT_DIR/$BINARY_DIR_NAME/$APP_NAME" "\$@"
+EOF
+        chmod +x "$BUILD_DIR/$APP_NAME"
+        
+        log_success "Binary directory built: $BUILD_DIR/$BINARY_DIR_NAME/"
+        log_success "Wrapper script created: $BUILD_DIR/$APP_NAME"
+    else
+        log_error "Build failed - directory $BUILD_DIR/$APP_NAME not found"
+        exit 1
     fi
-    
-    log_success "Binary built: $BUILD_DIR/$BINARY_NAME"
-    log_success "User-friendly link created: $BUILD_DIR/$APP_NAME"
 }
 
 test_binary() {
     log_info "Testing binary..."
     
-    OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-    ARCH=$(uname -m)
+    # Test the wrapper script
+    WRAPPER_PATH="$BUILD_DIR/$APP_NAME"
     
-    case $ARCH in
-        x86_64) ARCH="amd64" ;;
-        aarch64|arm64) ARCH="arm64" ;;
-    esac
-    
-    BINARY_NAME="${APP_NAME}_${OS}_${ARCH}"
-    BINARY_PATH="$BUILD_DIR/$BINARY_NAME"
-    
-    if [[ "$OS" == "mingw"* || "$OS" == "cygwin"* || "$OS" == "msys"* ]]; then
-        BINARY_PATH="$BUILD_DIR/${BINARY_NAME}.exe"
-    fi
-    
-    if [[ -f "$BINARY_PATH" ]]; then
-        chmod +x "$BINARY_PATH"
+    if [[ -f "$WRAPPER_PATH" ]]; then
+        chmod +x "$WRAPPER_PATH"
         
-        if $BINARY_PATH --version; then
+        if "$WRAPPER_PATH" --version; then
             log_success "Binary test passed"
         else
             log_error "Binary test failed"
             exit 1
         fi
     else
-        log_error "Binary not found for testing: $BINARY_PATH"
+        log_error "Wrapper script not found for testing: $WRAPPER_PATH"
         exit 1
     fi
 }
@@ -211,20 +214,21 @@ create_release_archive() {
     esac
     
     ARCHIVE_NAME="${APP_NAME}_${OS}_${ARCH}"
-    BINARY_NAME="${APP_NAME}_${OS}_${ARCH}"
+    BINARY_DIR_NAME="${APP_NAME}_${OS}_${ARCH}"
     
     cd $BUILD_DIR
     
-    if [[ "$OS" == "darwin" || "$OS" == "linux" ]]; then
-        if [[ -f "$BINARY_NAME" ]]; then
-            tar -czf "${ARCHIVE_NAME}.tar.gz" "$BINARY_NAME"
+    # Archive the directory and wrapper script
+    if [[ -d "$BINARY_DIR_NAME" && -f "$APP_NAME" ]]; then
+        if [[ "$OS" == "darwin" || "$OS" == "linux" ]]; then
+            tar -czf "${ARCHIVE_NAME}.tar.gz" "$BINARY_DIR_NAME" "$APP_NAME"
             log_success "Archive created: $BUILD_DIR/${ARCHIVE_NAME}.tar.gz"
-        fi
-    elif [[ "$OS" == "mingw"* || "$OS" == "cygwin"* || "$OS" == "msys"* ]]; then
-        if [[ -f "${BINARY_NAME}.exe" ]]; then
-            zip "${ARCHIVE_NAME}.zip" "${BINARY_NAME}.exe"
+        elif [[ "$OS" == "mingw"* || "$OS" == "cygwin"* || "$OS" == "msys"* ]]; then
+            zip -r "${ARCHIVE_NAME}.zip" "$BINARY_DIR_NAME" "$APP_NAME"
             log_success "Archive created: $BUILD_DIR/${ARCHIVE_NAME}.zip"
         fi
+    else
+        log_error "Binary directory or wrapper not found for archiving"
     fi
     
     cd ..
