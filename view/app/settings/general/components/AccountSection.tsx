@@ -10,7 +10,7 @@ import { TabsContent } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { UserSettings, User as UserType } from '@/redux/types/user';
-import { ModeToggle } from '@/components/ui/theme-toggler';
+import { ModeToggler } from '@/components/ui/theme-toggler';
 import { useSendVerificationEmailMutation } from '@/redux/services/users/authApi';
 import { useTranslation } from '@/hooks/use-translation';
 import { LanguageSwitcher } from '@/components/language-switcher';
@@ -200,7 +200,7 @@ function AccountSection({
               {t('settings.account.preferences.appearance')}
             </p>
             <RBACGuard resource="user" action="update">
-              <ModeToggle />
+              <ModeToggler />
             </RBACGuard>
           </div>
           <div className="flex justify-between items-center">
