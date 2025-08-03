@@ -55,7 +55,7 @@ class TestVersionChecker(unittest.TestCase):
 
         self.assertIsNone(version)
 
-    @patch("app.commands.conflict.conflict.ConfigLoader.load_config")
+    @patch("app.commands.conflict.conflict.ConflictChecker._load_user_config")
     def test_tool_mapping(self, mock_load_config):
         """Test tool name mapping for system commands"""
         # Provide a dummy config for ConflictChecker

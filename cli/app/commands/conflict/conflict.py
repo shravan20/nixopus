@@ -1,7 +1,6 @@
 import os
 import subprocess
 import re
-import yaml
 from typing import Dict, List, Optional, Any, Tuple
 from packaging import version
 from packaging.specifiers import SpecifierSet
@@ -11,6 +10,7 @@ from app.utils.logger import Logger
 from app.utils.protocols import LoggerProtocol
 from app.utils.output_formatter import OutputFormatter
 from app.utils.lib import ParallelProcessor
+from app.utils.config import Config, DEPS
 from .models import ConflictCheckResult, ConflictConfig
 from .messages import (
     error_checking_tool_version,
@@ -88,7 +88,7 @@ class VersionParser:
                 if version := VersionParser._search_version(r"curl\s+(\d+\.\d+\.\d+)", output, 0):
                     return version
 
-            elif tool == "ssh" or tool == "open-ssh":
+            elif tool == "ssh" or tool == "open-ssh" or tool == "openssh-server":
                 # "OpenSSH_9.8p1, LibreSSL 3.3.6" -> "9.8.1"
                 if match := re.search(r"OpenSSH_(\d+\.\d+)(?:p(\d+))?", output):
                     major_minor = match.group(1)
@@ -172,9 +172,9 @@ class VersionParser:
     def validate_version_format(requirement: str) -> bool:
         """
         Validate if the version requirement follows supported formats.
-
         Returns True if the format is supported, False otherwise.
         """
+
         if not requirement:
             return True
 
@@ -194,31 +194,6 @@ class VersionParser:
 
         # If none match, it's unsupported
         return False
-
-
-class ConfigLoader:
-    """Handles loading and parsing of configuration files."""
-
-    def __init__(self, logger: LoggerProtocol):
-        self.logger = logger
-
-    def load_config(self, config_path: str) -> Dict[str, Any]:
-        """Load configuration from YAML file."""
-        self.logger.debug(conflict_loading_config.format(path=config_path))
-
-        if not os.path.exists(config_path):
-            raise FileNotFoundError(conflict_config_not_found.format(path=config_path))
-
-        try:
-            with open(config_path, "r") as f:
-                config = yaml.safe_load(f)
-
-            self.logger.debug(conflict_config_loaded)
-            return config
-        except yaml.YAMLError as e:
-            raise ValueError(conflict_invalid_config.format(error=str(e)))
-        except Exception as e:
-            raise Exception(conflict_invalid_config.format(error=str(e)))
 
 
 class ToolVersionChecker:
@@ -301,9 +276,9 @@ class ConflictChecker:
     def __init__(self, config: ConflictConfig, logger: LoggerProtocol):
         self.config = config
         self.logger = logger
-        self.config_loader = ConfigLoader(logger)
+        self.yaml_config = Config()
         # Load deps config for version-command lookup
-        config_data = self.config_loader.load_config(self.config.config_file)
+        config_data = self._load_user_config(self.config.config_file)
         deps_config = config_data.get("deps", {})
         self.version_checker = ToolVersionChecker(config.timeout, logger, deps_config)
 
@@ -312,8 +287,8 @@ class ConflictChecker:
         results = []
 
         try:
-            # Load configuration
-            config_data = self.config_loader.load_config(self.config.config_file)
+            # Load configuration using standardized Config class
+            config_data = self._load_user_config(self.config.config_file)
 
             # Extract version requirements from deps section
             deps = config_data.get("deps", {})
@@ -330,6 +305,24 @@ class ConflictChecker:
             results.append(ConflictCheckResult(tool="configuration", status="error", conflict=True, error=str(e)))
 
         return results
+
+    def _load_user_config(self, config_path: str) -> Dict[str, Any]:
+        """Load user configuration file using standardized Config class."""
+        self.logger.debug(conflict_loading_config.format(path=config_path))
+        
+        try:
+            # Use standardized Config class for loading user config
+            flattened_config = self.yaml_config.load_user_config(config_path)
+            self.logger.debug(conflict_config_loaded)
+            
+            # Convert flattened config back to nested structure for backward compatibility
+            nested_config = self.yaml_config.unflatten_config(flattened_config)
+            return nested_config
+            
+        except FileNotFoundError:
+            raise FileNotFoundError(conflict_config_not_found.format(path=config_path))
+        except Exception as e:
+            raise Exception(conflict_invalid_config.format(error=str(e)))
 
     def _check_version_conflicts(self, deps: Dict[str, Any]) -> List[ConflictCheckResult]:
         """Check for tool version conflicts from deps configuration."""

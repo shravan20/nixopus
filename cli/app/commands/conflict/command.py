@@ -1,11 +1,11 @@
 import typer
 from .conflict import ConflictConfig, ConflictService
 from .messages import (
-    conflict_check_help, 
+    conflict_check_help,
     error_checking_conflicts,
     conflicts_found_warning,
     no_conflicts_info,
-    checking_conflicts_info
+    checking_conflicts_info,
 )
 from app.utils.logger import Logger
 
@@ -22,8 +22,10 @@ def conflict_callback(
 ) -> None:
     """Check for tool version conflicts"""
     if ctx.invoked_subcommand is None:
+        # Initialize logger once and reuse throughout
+        logger = Logger(verbose=verbose)
+        
         try:
-            logger = Logger(verbose=verbose)
             logger.info(checking_conflicts_info)
 
             config = ConflictConfig(
@@ -49,6 +51,5 @@ def conflict_callback(
                 logger.info(no_conflicts_info)
 
         except Exception as e:
-            logger = Logger(verbose=verbose)
             logger.error(error_checking_conflicts.format(error=str(e)))
             raise typer.Exit(1)
