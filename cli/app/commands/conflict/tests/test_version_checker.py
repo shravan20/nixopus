@@ -15,7 +15,7 @@ class TestVersionChecker(unittest.TestCase):
     def setUp(self):
         self.logger = Logger(verbose=False)
         self.config = ConflictConfig(
-            config_file="test_config.yaml", timeout=1, verbose=False, output="text"
+            config_file="test_config.yaml", verbose=False, output="text"
         )
 
     @patch("subprocess.run")
@@ -26,7 +26,7 @@ class TestVersionChecker(unittest.TestCase):
         mock_result.stdout = "Docker version 20.10.5, build 55c4c88"
         mock_run.return_value = mock_result
 
-        checker = ToolVersionChecker(5, self.logger)
+        checker = ToolVersionChecker(self.logger, timeout=5)
         version = checker.get_tool_version("docker")
 
         self.assertEqual(version, "20.10.5")
@@ -40,7 +40,7 @@ class TestVersionChecker(unittest.TestCase):
         mock_result.stdout = ""
         mock_run.return_value = mock_result
 
-        checker = ToolVersionChecker(5, self.logger)
+        checker = ToolVersionChecker(self.logger, timeout=5)
         version = checker.get_tool_version("nonexistent")
 
         self.assertIsNone(version)
@@ -50,7 +50,7 @@ class TestVersionChecker(unittest.TestCase):
         """Test ToolVersionChecker with timeout"""
         mock_run.side_effect = subprocess.TimeoutExpired("cmd", 5)
 
-        checker = ToolVersionChecker(5, self.logger)
+        checker = ToolVersionChecker(self.logger, timeout=5)
         version = checker.get_tool_version("slow_tool")
 
         self.assertIsNone(version)
@@ -94,7 +94,7 @@ class TestVersionChecker(unittest.TestCase):
             temp_path = f.name
 
         try:
-            config = ConflictConfig(config_file=temp_path, timeout=1, verbose=False, output="text")
+            config = ConflictConfig(config_file=temp_path, verbose=False, output="text")
 
             checker = ConflictChecker(config, self.logger)
 
@@ -117,7 +117,7 @@ class TestVersionChecker(unittest.TestCase):
 
     def test_tool_version_check_integration(self):
         """Test the integration of tool version checking"""
-        checker = ToolVersionChecker(5, self.logger)
+        checker = ToolVersionChecker(self.logger, timeout=5)
         
         # Test that the tool version checking works with mocked subprocess
         with patch("subprocess.run") as mock_run:
@@ -138,7 +138,7 @@ class TestVersionChecker(unittest.TestCase):
             "go": {"version-command": ["go", "version"]},
             "ssh": {"version-command": ["ssh", "-V"]},
         }
-        checker = ToolVersionChecker(5, self.logger, deps_config)
+        checker = ToolVersionChecker(self.logger, deps_config, timeout=5)
         with patch("subprocess.run") as mock_run:
             mock_result = Mock()
             mock_result.returncode = 0

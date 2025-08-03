@@ -19,7 +19,7 @@ class TestServiceIntegration(unittest.TestCase):
     def setUp(self):
         self.logger = Logger(verbose=False)
         self.config = ConflictConfig(
-            config_file="test_config.yaml", timeout=1, verbose=False, output="text"
+            config_file="test_config.yaml", verbose=False, output="text"
         )
 
     def test_conflict_service_integration(self):
@@ -31,7 +31,7 @@ class TestServiceIntegration(unittest.TestCase):
             temp_path = f.name
 
         try:
-            config = ConflictConfig(config_file=temp_path, timeout=1, verbose=False, output="text")
+            config = ConflictConfig(config_file=temp_path, verbose=False, output="text")
 
             service = ConflictService(config, self.logger)
 
@@ -59,7 +59,7 @@ class TestServiceIntegration(unittest.TestCase):
             temp_path = f.name
 
         try:
-            config = ConflictConfig(config_file=temp_path, timeout=1, verbose=False, output="text")
+            config = ConflictConfig(config_file=temp_path, verbose=False, output="text")
 
             service = ConflictService(config, self.logger)
             results = service.check_conflicts()
@@ -122,7 +122,7 @@ class TestServiceIntegration(unittest.TestCase):
             temp_path = f.name
 
         try:
-            config = ConflictConfig(config_file=temp_path, timeout=1, verbose=False, output="text")
+            config = ConflictConfig(config_file=temp_path, verbose=False, output="text")
 
             service = ConflictService(config, self.logger)
 

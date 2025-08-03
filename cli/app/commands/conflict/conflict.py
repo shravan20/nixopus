@@ -12,22 +12,7 @@ from app.utils.output_formatter import OutputFormatter
 from app.utils.lib import ParallelProcessor
 from app.utils.config import Config, DEPS
 from .models import ConflictCheckResult, ConflictConfig
-from .messages import (
-    error_checking_tool_version,
-    error_parsing_version,
-    timeout_checking_tool,
-    tool_not_found,
-    tool_version_mismatch,
-    tool_version_compatible,
-    conflict_config_not_found,
-    conflict_invalid_config,
-    conflict_loading_config,
-    conflict_config_loaded,
-    supported_version_formats_info,
-    unsupported_version_format_warning,
-    no_deps_found_warning,
-    no_version_conflicts_message,
-)
+from .messages import *
 
 
 class VersionParser:
@@ -135,14 +120,8 @@ class VersionParser:
     def normalize_version_requirement(requirement: str) -> str:
         """
         Parse version requirement and return a normalized specifier.
-
-        Supported formats in config files:
-        - Exact version: "1.20.3"
-        - Range operators: ">=1.20.0, <2.0.0"
-        - Greater/less than: ">=1.20.0", "<2.0.0"
-        - Compatible release: "~=1.20.0" (Python-style)
-        - Major.minor only: "1.20" (treated as >=1.20.0, <1.21.0)
         """
+
         if not requirement:
             return requirement
 
@@ -202,8 +181,8 @@ class ToolVersionChecker:
     # Tool name mappings for command execution
     TOOL_MAPPING = {"open-ssh": "ssh", "open-sshserver": "sshd", "python3-venv": "python3"}  # TODO: @shravan20 Fix this issue
 
-    def __init__(self, timeout: int, logger: LoggerProtocol, deps_config: Optional[Dict[str, Any]] = None):
-        self.timeout = timeout
+    def __init__(self, logger: LoggerProtocol, deps_config: Optional[Dict[str, Any]] = None, timeout: int = 10):
+        self.timeout = timeout  # Default timeout for individual subprocess calls
         self.logger = logger
         self.deps_config = deps_config or {}
 
@@ -280,7 +259,7 @@ class ConflictChecker:
         # Load deps config for version-command lookup
         config_data = self._load_user_config(self.config.config_file)
         deps_config = config_data.get("deps", {})
-        self.version_checker = ToolVersionChecker(config.timeout, logger, deps_config)
+        self.version_checker = ToolVersionChecker(logger, deps_config)
 
     def check_conflicts(self) -> List[ConflictCheckResult]:
         """Check for version conflicts."""
@@ -309,16 +288,16 @@ class ConflictChecker:
     def _load_user_config(self, config_path: str) -> Dict[str, Any]:
         """Load user configuration file using standardized Config class."""
         self.logger.debug(conflict_loading_config.format(path=config_path))
-        
+
         try:
             # Use standardized Config class for loading user config
             flattened_config = self.yaml_config.load_user_config(config_path)
             self.logger.debug(conflict_config_loaded)
-            
+
             # Convert flattened config back to nested structure for backward compatibility
             nested_config = self.yaml_config.unflatten_config(flattened_config)
             return nested_config
-            
+
         except FileNotFoundError:
             raise FileNotFoundError(conflict_config_not_found.format(path=config_path))
         except Exception as e:

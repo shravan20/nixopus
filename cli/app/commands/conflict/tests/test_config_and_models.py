@@ -17,9 +17,7 @@ class TestConfigAndModels(unittest.TestCase):
 
     def setUp(self):
         self.logger = Logger(verbose=False)
-        self.config = ConflictConfig(
-            config_file="test_config.yaml", timeout=1, verbose=False, output="text"
-        )
+        self.config = ConflictConfig(config_file="test_config.yaml", verbose=False, output="text")
 
     def test_conflict_check_result_creation(self):
         """Test ConflictCheckResult model creation"""
@@ -39,13 +37,11 @@ class TestConfigAndModels(unittest.TestCase):
             temp_path = f.name
 
         try:
-            conflict_config = ConflictConfig(
-                config_file=temp_path, timeout=1, verbose=False, output="text"
-            )
-            
+            conflict_config = ConflictConfig(config_file=temp_path, verbose=False, output="text")
+
             # Create ConflictChecker which will load the config internally
             checker = ConflictChecker(conflict_config, self.logger)
-            
+
             # Test that the config was loaded correctly by checking internal state
             # We can verify this by calling _load_user_config directly
             result = checker._load_user_config(temp_path)
@@ -59,9 +55,7 @@ class TestConfigAndModels(unittest.TestCase):
 
     def test_config_loading_missing_file(self):
         """Test ConflictChecker config loading with missing file"""
-        conflict_config = ConflictConfig(
-            config_file="nonexistent.yaml", timeout=1, verbose=False, output="text"
-        )
+        conflict_config = ConflictConfig(config_file="nonexistent.yaml", verbose=False, output="text")
 
         # ConflictChecker initialization should fail with missing config file
         with self.assertRaises(FileNotFoundError):
@@ -74,9 +68,7 @@ class TestConfigAndModels(unittest.TestCase):
             temp_path = f.name
 
         try:
-            conflict_config = ConflictConfig(
-                config_file=temp_path, timeout=1, verbose=False, output="text"
-            )
+            conflict_config = ConflictConfig(config_file=temp_path, verbose=False, output="text")
 
             # ConflictChecker initialization should fail with invalid YAML
             with self.assertRaises(Exception):
@@ -93,11 +85,10 @@ class TestConfigAndModels(unittest.TestCase):
             temp_path = f.name
 
         try:
-            config = ConflictConfig(config_file=temp_path, timeout=1, verbose=False, output="text")
-            
+            config = ConflictConfig(config_file=temp_path, verbose=False, output="text")
+
             # Test that config is created successfully even with empty deps
             self.assertEqual(config.config_file, temp_path)
-            self.assertEqual(config.timeout, 1)
             self.assertFalse(config.verbose)
             self.assertEqual(config.output, "text")
         finally:

@@ -8,6 +8,7 @@ from .messages import (
     checking_conflicts_info,
 )
 from app.utils.logger import Logger
+from app.utils.timeout import TimeoutWrapper
 
 conflict_app = typer.Typer(help=conflict_check_help, no_args_is_help=False)
 
@@ -30,17 +31,17 @@ def conflict_callback(
 
             config = ConflictConfig(
                 config_file=config_file,
-                timeout=timeout,
                 verbose=verbose,
                 output=output,
             )
 
             service = ConflictService(config, logger=logger)
-            result = service.check_and_format(output)
-
-            # Check if there are any conflicts and exit with appropriate code
-            results = service.check_conflicts()
-            conflicts = [r for r in results if r.conflict]
+            
+            with TimeoutWrapper(timeout):
+                result = service.check_and_format(output)
+                # Check if there are any conflicts and exit with appropriate code
+                results = service.check_conflicts()
+                conflicts = [r for r in results if r.conflict]
 
             if conflicts:
                 logger.error(result)
@@ -50,6 +51,9 @@ def conflict_callback(
                 logger.success(result)
                 logger.info(no_conflicts_info)
 
+        except TimeoutError as e:
+            logger.error(str(e))
+            raise typer.Exit(1)
         except Exception as e:
             logger.error(error_checking_conflicts.format(error=str(e)))
             raise typer.Exit(1)

@@ -19,6 +19,5 @@ class ConflictCheckResult(BaseModel):
 class ConflictConfig(BaseModel):
     """Configuration for conflict checking."""
     config_file: str = Field("helpers/config.prod.yaml", description="Path to configuration file")
-    timeout: int = Field(5, gt=0, le=60, description="Timeout for tool checks")
     verbose: bool = Field(False, description="Verbose output")
     output: str = Field("text", description="Output format (text/json)")
