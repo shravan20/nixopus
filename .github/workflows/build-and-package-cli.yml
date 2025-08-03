@@ -1,0 +1,305 @@
+name: Build and Package CLI
+
+on:
+  push:
+    branches: [ feat/cli_releaser ]
+    paths:
+      - 'cli/**'
+
+jobs:
+  build-and-package:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            python-arch: x64
+          - arch: aarch64
+            python-arch: x64
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        architecture: ${{ matrix.python-arch }}
+        
+    - name: Set up QEMU for cross-compilation
+      if: matrix.arch == 'aarch64'
+      uses: docker/setup-qemu-action@v3
+      with:
+        platforms: arm64
+        
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: latest
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+        
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: cli/.venv
+        key: venv-${{ runner.os }}-${{ hashFiles('cli/poetry.lock') }}
+        
+    - name: Install dependencies
+      working-directory: cli
+      run: poetry install
+      
+    - name: Install Ruby and fpm
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ruby ruby-dev rubygems build-essential
+        sudo gem install --no-document fpm
+        
+    - name: Build CLI binary
+      working-directory: cli
+      run: |
+        chmod +x build.sh
+        if [ ! -d "helpers" ]; then
+          ln -s ../helpers helpers
+        fi
+        ./build.sh --no-test --no-cleanup
+        
+    - name: Prepare binary for packaging
+      working-directory: cli
+      run: |
+        mkdir -p packaging/usr/local/bin
+        if [ -f "dist/nixopus" ]; then
+          cp dist/nixopus packaging/usr/local/bin/
+          if [ -d "dist/nixopus_linux_amd64" ]; then
+            cp -r dist/nixopus_linux_amd64 packaging/usr/local/bin/
+          elif [ -d "dist/nixopus_linux_arm64" ]; then
+            cp -r dist/nixopus_linux_arm64 packaging/usr/local/bin/
+          fi
+        else
+          echo "Build output not found in expected location"
+          ls -la dist/
+          exit 1
+        fi
+        chmod +x packaging/usr/local/bin/nixopus
+        
+    - name: Set architecture variables
+      run: |
+        echo "ARCH=${{ matrix.arch }}" >> $GITHUB_ENV
+        echo "PKG_ARCH=${{ matrix.arch == 'aarch64' && 'arm64' || 'amd64' }}" >> $GITHUB_ENV
+        
+    - name: Create DEB package
+      working-directory: cli
+      run: |
+        fpm -s dir -t deb \
+          -n nixopus \
+          -v "0.1.0" \
+          -a "$PKG_ARCH" \
+          --description "A CLI for Nixopus" \
+          --maintainer "Nixopus <raghavyuva@gmail.com>" \
+          --license "MIT" \
+          --url "https://github.com/nixopus/cli" \
+          --deb-priority optional \
+          --deb-compression bzip2 \
+          --prefix / \
+          packaging/=/
+          
+    - name: Create RPM package
+      working-directory: cli
+      run: |
+        fpm -s dir -t rpm \
+          -n nixopus \
+          -v "0.1.0" \
+          -a "$PKG_ARCH" \
+          --description "A CLI for Nixopus" \
+          --maintainer "Nixopus <raghavyuva@gmail.com>" \
+          --license "MIT" \
+          --url "https://github.com/nixopus/cli" \
+          --rpm-compression bzip2 \
+          --prefix / \
+          packaging/=/
+          
+    - name: Create TAR.GZ package
+      working-directory: cli
+      run: |
+        fpm -s dir -t tar \
+          -n nixopus \
+          -v "0.1.0" \
+          -a "$PKG_ARCH" \
+          --description "A CLI for Nixopus" \
+          --maintainer "Nixopus <raghavyuva@gmail.com>" \
+          --license "MIT" \
+          --url "https://github.com/nixopus/cli" \
+          --prefix / \
+          packaging/=/
+          
+    - name: Create APK package
+      working-directory: cli
+      run: |
+        fpm -s dir -t apk \
+          -n nixopus \
+          -v "0.1.0" \
+          -a "$PKG_ARCH" \
+          --description "A CLI for Nixopus" \
+          --maintainer "Nixopus <raghavyuva@gmail.com>" \
+          --license "MIT" \
+          --url "https://github.com/nixopus/cli" \
+          --prefix / \
+          packaging/=/
+          
+    - name: Create Pacman package
+      working-directory: cli
+      run: |
+        fpm -s dir -t pacman \
+          -n nixopus \
+          -v "0.1.0" \
+          -a "$PKG_ARCH" \
+          --description "A CLI for Nixopus" \
+          --maintainer "Nixopus <raghavyuva@gmail.com>" \
+          --license "MIT" \
+          --url "https://github.com/nixopus/cli" \
+          --prefix / \
+          packaging/=/
+          
+    - name: Create ZIP package
+      working-directory: cli
+      run: |
+        fpm -s dir -t zip \
+          -n nixopus \
+          -v "0.1.0" \
+          --description "A CLI for Nixopus" \
+          --maintainer "Nixopus <raghavyuva@gmail.com>" \
+          --license "MIT" \
+          --url "https://github.com/nixopus/cli" \
+          --prefix / \
+          packaging/=/
+          
+    - name: Create macOS PKG package
+      if: matrix.arch == 'x86_64'
+      working-directory: cli
+      run: |
+        fpm -s dir -t osxpkg \
+          -n nixopus \
+          -v "0.1.0" \
+          --description "A CLI for Nixopus" \
+          --maintainer "Nixopus <raghavyuva@gmail.com>" \
+          --license "MIT" \
+          --url "https://github.com/nixopus/cli" \
+          --prefix / \
+          packaging/=/
+          
+    - name: Create AppImage
+      if: matrix.arch == 'x86_64'
+      working-directory: cli
+      run: |
+        wget -O linuxdeploy https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+        chmod +x linuxdeploy
+        mkdir -p AppDir/usr/bin
+        cp packaging/usr/local/bin/nixopus AppDir/usr/bin/
+        
+        cat > AppDir/nixopus.desktop << EOF
+        [Desktop Entry]
+        Type=Application
+        Name=Nixopus CLI
+        Exec=nixopus
+        Icon=nixopus
+        Categories=Development;
+        EOF
+        
+        mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+        echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==" | base64 -d > AppDir/usr/share/icons/hicolor/256x256/apps/nixopus.png
+        
+        ./linuxdeploy --appdir AppDir --output appimage
+        mv *.AppImage nixopus-0.1.0-x86_64.AppImage
+        
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: nixopus-packages-${{ matrix.arch }}
+        path: |
+          cli/*.deb
+          cli/*.rpm
+          cli/*.tar
+          cli/*.apk
+          cli/*.pkg.tar.xz
+          cli/*.zip
+          cli/*.pkg
+          cli/*.AppImage
+        retention-days: 30
+        
+    - name: Create release branch and PR
+      if: github.ref == 'refs/heads/feat/cli' && github.event_name == 'push'
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        
+        RELEASE_BRANCH="release/cli-packages-$(date +%Y%m%d-%H%M%S)-${{ matrix.arch }}"
+        git checkout -b $RELEASE_BRANCH
+        
+        mkdir -p releases/cli/${{ matrix.arch }}
+        
+        cp cli/*.deb releases/cli/${{ matrix.arch }}/ 2>/dev/null || true
+        cp cli/*.rpm releases/cli/${{ matrix.arch }}/ 2>/dev/null || true
+        cp cli/*.tar releases/cli/${{ matrix.arch }}/ 2>/dev/null || true
+        cp cli/*.apk releases/cli/${{ matrix.arch }}/ 2>/dev/null || true
+        cp cli/*.pkg.tar.xz releases/cli/${{ matrix.arch }}/ 2>/dev/null || true
+        cp cli/*.zip releases/cli/${{ matrix.arch }}/ 2>/dev/null || true
+        cp cli/*.pkg releases/cli/${{ matrix.arch }}/ 2>/dev/null || true
+        cp cli/*.AppImage releases/cli/${{ matrix.arch }}/ 2>/dev/null || true
+        
+        git add releases/
+        git commit -m "Add CLI packages for ${{ matrix.arch }} architecture
+
+        Built from commit: ${{ github.sha }}
+        Packages included:
+        - DEB (Debian/Ubuntu)
+        - RPM (RedHat/CentOS/Fedora)
+        - TAR.GZ (Compressed archive)
+        - APK (Alpine Linux)
+        - Pacman (Arch Linux)
+        - ZIP (Simple archive)
+        $([ '${{ matrix.arch }}' = 'x86_64' ] && echo '- OSX PKG (macOS installer)')
+        $([ '${{ matrix.arch }}' = 'x86_64' ] && echo '- AppImage (Universal Linux)')
+        
+        Generated with GitHub Actions"
+        
+        git push origin $RELEASE_BRANCH
+        
+        gh pr create \
+          --title "CLI Packages Release - ${{ matrix.arch }} Architecture" \
+          --body "$(cat <<'EOF'
+        ## CLI Package Release
+        
+        This PR contains compiled CLI packages for the **${{ matrix.arch }}** architecture.
+        
+        ### Packages Included
+        - **DEB** - Debian/Ubuntu packages
+        - **RPM** - RedHat/CentOS/Fedora packages  
+        - **TAR.GZ** - Compressed archives
+        - **APK** - Alpine Linux packages
+        - **Pacman** - Arch Linux packages
+        - **ZIP** - Simple zip archives
+        $([ '${{ matrix.arch }}' = 'x86_64' ] && echo '- **OSX PKG** - macOS installer packages')
+        $([ '${{ matrix.arch }}' = 'x86_64' ] && echo '- **AppImage** - Universal Linux apps')
+        
+        ### Build Details
+        - **Source Commit**: ${{ github.sha }}
+        - **Architecture**: ${{ matrix.arch }}
+        - **Build Date**: $(date)
+        - **Workflow**: ${{ github.workflow }}
+        
+        ### Package Location
+        All packages are located in: `releases/cli/${{ matrix.arch }}/`
+        
+        ### Testing
+        - [ ] Packages build successfully
+        - [ ] All target formats generated
+        - [ ] Ready for distribution
+        
+        Generated with GitHub Actions
+        EOF
+        )" \
+          --head $RELEASE_BRANCH \
+          --base master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
