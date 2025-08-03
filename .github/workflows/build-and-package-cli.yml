@@ -215,7 +215,7 @@ jobs:
         mv *.AppImage nixopus-0.1.0-x86_64.AppImage
         
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: nixopus-packages-${{ matrix.arch }}
         path: |
