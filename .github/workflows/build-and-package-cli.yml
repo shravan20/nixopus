@@ -5,6 +5,8 @@ on:
     branches: [ feat/cli_releaser ]
     paths:
       - 'cli/**'
+      - '.github/workflows/build-and-package-cli.yml'
+  workflow_dispatch:
 
 jobs:
   build-and-package:
