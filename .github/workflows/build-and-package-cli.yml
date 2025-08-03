@@ -162,30 +162,6 @@ jobs:
           --prefix / \
           packaging/=/
           
-    - name: Create AppImage
-      if: matrix.arch == 'x86_64'
-      working-directory: cli
-      run: |
-        wget -O linuxdeploy https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
-        chmod +x linuxdeploy
-        mkdir -p AppDir/usr/bin
-        cp packaging/usr/local/bin/nixopus AppDir/usr/bin/
-        
-        cat > AppDir/nixopus.desktop << EOF
-        [Desktop Entry]
-        Type=Application
-        Name=Nixopus CLI
-        Exec=nixopus
-        Icon=nixopus
-        Categories=Development;
-        EOF
-        
-        mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
-        echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==" | base64 -d > AppDir/usr/share/icons/hicolor/256x256/apps/nixopus.png
-        
-        ./linuxdeploy --appdir AppDir --output appimage
-        mv *.AppImage nixopus-0.1.0-x86_64.AppImage
-        
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
@@ -196,7 +172,6 @@ jobs:
           cli/*.tar
           cli/*.apk
           cli/*.zip
-          cli/*.AppImage
         retention-days: 30
         
     - name: Create release branch and PR
@@ -215,7 +190,6 @@ jobs:
         cp cli/*.tar releases/cli/${{ matrix.arch }}/ 2>/dev/null || true
         cp cli/*.apk releases/cli/${{ matrix.arch }}/ 2>/dev/null || true
         cp cli/*.zip releases/cli/${{ matrix.arch }}/ 2>/dev/null || true
-        cp cli/*.AppImage releases/cli/${{ matrix.arch }}/ 2>/dev/null || true
         
         git add releases/
         git commit -m "Add CLI packages for ${{ matrix.arch }} architecture
@@ -227,7 +201,6 @@ jobs:
         - TAR.GZ (Compressed archive)
         - APK (Alpine Linux)
         - ZIP (Simple archive)
-        $([ '${{ matrix.arch }}' = 'x86_64' ] && echo '- AppImage (Universal Linux)')
         
         Generated with GitHub Actions"
         
@@ -246,7 +219,6 @@ jobs:
         - **TAR.GZ** - Compressed archives
         - **APK** - Alpine Linux packages
         - **ZIP** - Simple zip archives
-        $([ '${{ matrix.arch }}' = 'x86_64' ] && echo '- **AppImage** - Universal Linux apps')
         
         ### Build Details
         - **Source Commit**: ${{ github.sha }}
