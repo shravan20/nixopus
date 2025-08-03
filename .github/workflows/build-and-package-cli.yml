@@ -175,7 +175,7 @@ jobs:
         retention-days: 30
         
     - name: Create release branch and PR
-      if: github.ref == 'refs/heads/feat/cli' && github.event_name == 'push'
+      if: github.ref == 'refs/heads/feat/cli_releaser' && github.event_name == 'push'
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
