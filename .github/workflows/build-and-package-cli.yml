@@ -99,7 +99,7 @@ jobs:
           -a "$PKG_ARCH" \
           --description "A CLI for Nixopus" \
           --maintainer "Nixopus <raghavyuva@gmail.com>" \
-          --license "MIT" \
+          --license "FSL" \
           --url "https://github.com/nixopus/cli" \
           --deb-priority optional \
           --deb-compression bzip2 \
@@ -115,7 +115,7 @@ jobs:
           -a "$PKG_ARCH" \
           --description "A CLI for Nixopus" \
           --maintainer "Nixopus <raghavyuva@gmail.com>" \
-          --license "MIT" \
+          --license "FSL" \
           --url "https://github.com/nixopus/cli" \
           --rpm-compression bzip2 \
           --prefix / \
@@ -130,7 +130,7 @@ jobs:
           -a "$PKG_ARCH" \
           --description "A CLI for Nixopus" \
           --maintainer "Nixopus <raghavyuva@gmail.com>" \
-          --license "MIT" \
+          --license "FSL" \
           --url "https://github.com/nixopus/cli" \
           --prefix / \
           packaging/=/
@@ -144,21 +144,7 @@ jobs:
           -a "$PKG_ARCH" \
           --description "A CLI for Nixopus" \
           --maintainer "Nixopus <raghavyuva@gmail.com>" \
-          --license "MIT" \
-          --url "https://github.com/nixopus/cli" \
-          --prefix / \
-          packaging/=/
-          
-    - name: Create Pacman package
-      working-directory: cli
-      run: |
-        fpm -s dir -t pacman \
-          -n nixopus \
-          -v "0.1.0" \
-          -a "$PKG_ARCH" \
-          --description "A CLI for Nixopus" \
-          --maintainer "Nixopus <raghavyuva@gmail.com>" \
-          --license "MIT" \
+          --license "FSL" \
           --url "https://github.com/nixopus/cli" \
           --prefix / \
           packaging/=/
@@ -171,7 +157,7 @@ jobs:
           -v "0.1.0" \
           --description "A CLI for Nixopus" \
           --maintainer "Nixopus <raghavyuva@gmail.com>" \
-          --license "MIT" \
+          --license "FSL" \
           --url "https://github.com/nixopus/cli" \
           --prefix / \
           packaging/=/
@@ -185,7 +171,7 @@ jobs:
           -v "0.1.0" \
           --description "A CLI for Nixopus" \
           --maintainer "Nixopus <raghavyuva@gmail.com>" \
-          --license "MIT" \
+          --license "FSL" \
           --url "https://github.com/nixopus/cli" \
           --prefix / \
           packaging/=/
@@ -223,7 +209,6 @@ jobs:
           cli/*.rpm
           cli/*.tar
           cli/*.apk
-          cli/*.pkg.tar.xz
           cli/*.zip
           cli/*.pkg
           cli/*.AppImage
@@ -244,7 +229,6 @@ jobs:
         cp cli/*.rpm releases/cli/${{ matrix.arch }}/ 2>/dev/null || true
         cp cli/*.tar releases/cli/${{ matrix.arch }}/ 2>/dev/null || true
         cp cli/*.apk releases/cli/${{ matrix.arch }}/ 2>/dev/null || true
-        cp cli/*.pkg.tar.xz releases/cli/${{ matrix.arch }}/ 2>/dev/null || true
         cp cli/*.zip releases/cli/${{ matrix.arch }}/ 2>/dev/null || true
         cp cli/*.pkg releases/cli/${{ matrix.arch }}/ 2>/dev/null || true
         cp cli/*.AppImage releases/cli/${{ matrix.arch }}/ 2>/dev/null || true
@@ -258,7 +242,6 @@ jobs:
         - RPM (RedHat/CentOS/Fedora)
         - TAR.GZ (Compressed archive)
         - APK (Alpine Linux)
-        - Pacman (Arch Linux)
         - ZIP (Simple archive)
         $([ '${{ matrix.arch }}' = 'x86_64' ] && echo '- OSX PKG (macOS installer)')
         $([ '${{ matrix.arch }}' = 'x86_64' ] && echo '- AppImage (Universal Linux)')
@@ -279,7 +262,6 @@ jobs:
         - **RPM** - RedHat/CentOS/Fedora packages  
         - **TAR.GZ** - Compressed archives
         - **APK** - Alpine Linux packages
-        - **Pacman** - Arch Linux packages
         - **ZIP** - Simple zip archives
         $([ '${{ matrix.arch }}' = 'x86_64' ] && echo '- **OSX PKG** - macOS installer packages')
         $([ '${{ matrix.arch }}' = 'x86_64' ] && echo '- **AppImage** - Universal Linux apps')
