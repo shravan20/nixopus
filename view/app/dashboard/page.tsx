@@ -12,13 +12,13 @@ import { useAppSelector } from '@/redux/hooks';
 import { useGetSMTPConfigurationsQuery } from '@/redux/services/settings/notificationApi';
 import { SMTPBanner } from './components/smtp-banner';
 import { useFeatureFlags } from '@/hooks/features_provider';
-import Skeleton from '../file-manager/components/skeleton/Skeleton';
 import DisabledFeature from '@/components/features/disabled-feature';
 import { FeatureNames } from '@/types/feature-flags';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { ResourceGuard } from '@/components/rbac/PermissionGuard';
-import { TypographyH1, TypographyMuted } from '@/components/ui/typography';
+import { TypographyH1, TypographyMuted, TypographySmall } from '@/components/ui/typography';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // for dashboard page, we need to check if the user has the dashboard:read permission
 function DashboardPage() {
@@ -29,6 +29,8 @@ function DashboardPage() {
     skip: !activeOrganization
   });
   const { isFeatureEnabled, isLoading: isFeatureFlagsLoading } = useFeatureFlags();
+
+
   if (isFeatureFlagsLoading) {
     return <Skeleton />;
   }
@@ -83,7 +85,7 @@ const MonitoringSection = ({
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-xs sm:text-sm font-bold flex items-center">
             <Package className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-muted-foreground" />
-            {t('dashboard.containers.title')}
+            <TypographySmall>{t('dashboard.containers.title')}</TypographySmall>
           </CardTitle>
           <Button variant="outline" size="sm" onClick={() => router.push('/containers')}>
             <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-muted-foreground" />

@@ -53,11 +53,11 @@ export function ModeToggler() {
             <div className="flex justify-center">
                 <div className="relative">
                     <Button
-                        variant={'link'}
+                        variant={'outline'}
                         className="text-foreground no-underline hover:no-underline"
                         onClick={() => setOpen(true)}
                     >
-                        <Palette className="h-4 w-4" />
+                        <Palette className="h-4 w-4 text-primary" />
                     </Button>
                 </div>
         </div>
