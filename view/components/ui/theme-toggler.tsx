@@ -57,11 +57,10 @@ export function ModeToggler() {
                         className="text-foreground no-underline hover:no-underline"
                         onClick={() => setOpen(true)}
                     >
-                        <Palette className="mr-2 h-4 w-4" />
-                        <span className="mr-2">Themes</span>
+                        <Palette className="h-4 w-4" />
                     </Button>
                 </div>
-            </div>
+        </div>
             <CommandDialog open={open} onOpenChange={setOpen}>
                 <CommandInput placeholder="Search for a theme" />
                 <CommandList>

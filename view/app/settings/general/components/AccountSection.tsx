@@ -196,14 +196,6 @@ function AccountSection({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex justify-between items-center">
-            <p className="text-muted-foreground text-sm">
-              {t('settings.account.preferences.appearance')}
-            </p>
-            <RBACGuard resource="user" action="update">
-              <ModeToggler />
-            </RBACGuard>
-          </div>
-          <div className="flex justify-between items-center">
             <p className="text-muted-foreground text-sm">{t('settings.preferences.font')}</p>
             <RBACGuard resource="user" action="update">
               <Select

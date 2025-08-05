@@ -19,7 +19,7 @@ const LoadAverageCard: React.FC<LoadAverageCardProps> = ({ systemStats }) => {
     <Card className="overflow-hidden">
       <CardHeader className="pb-2">
         <CardTitle className="text-xs sm:text-sm font-medium flex items-center">
-          <Activity className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+          <Activity className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-muted-foreground" />
           {t('dashboard.load.title')}
         </CardTitle>
       </CardHeader>
@@ -60,7 +60,7 @@ const LoadBar: React.FC<LoadBarProps> = ({ label, value }) => (
     <div className="flex items-center">
       <div className="w-20 sm:w-32 h-2 bg-gray-200 rounded-full mr-1 sm:mr-2">
         <div
-          className="h-2 bg-blue-500 rounded-full"
+          className={`h-2 rounded-full ${value > 80 ? 'bg-destructive' : 'bg-primary'}`}
           style={{ width: `${Math.min(value * 25, 100)}%` }}
         />
       </div>
@@ -78,7 +78,7 @@ export function LoadAverageCardSkeleton() {
     <Card className="overflow-hidden">
       <CardHeader className="pb-2">
         <CardTitle className="text-xs sm:text-sm font-medium flex items-center">
-          <Activity className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+          <Activity className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-muted-foreground" />
           {t('dashboard.load.title')}
         </CardTitle>
       </CardHeader>

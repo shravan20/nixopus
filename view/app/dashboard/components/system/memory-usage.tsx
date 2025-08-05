@@ -21,15 +21,15 @@ const MemoryUsageCard: React.FC<MemoryUsageCardProps> = ({ systemStats }) => {
     <Card className="overflow-hidden">
       <CardHeader className="pb-2">
         <CardTitle className="text-xs sm:text-sm font-medium flex items-center">
-          <BarChart className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+          <BarChart className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-muted-foreground" />
           {t('dashboard.memory.title')}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-2 sm:space-y-3">
           <div className="w-full h-2 bg-gray-200 rounded-full">
-            <div
-              className={`h-2 rounded-full ${memory.percentage > 80 ? 'bg-red-500' : 'bg-green-500'}`}
+            <div  
+              className={`h-2 rounded-full ${memory.percentage > 80 ? 'bg-destructive' : 'bg-primary'}`}
               style={{ width: `${memory.percentage}%` }}
             />
           </div>
@@ -62,7 +62,7 @@ export function MemoryUsageCardSkeleton() {
     <Card className="overflow-hidden">
       <CardHeader className="pb-2">
         <CardTitle className="text-xs sm:text-sm font-medium flex items-center">
-          <BarChart className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+          <BarChart className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-muted-foreground" />
           {t('dashboard.memory.title')}
         </CardTitle>
       </CardHeader>
