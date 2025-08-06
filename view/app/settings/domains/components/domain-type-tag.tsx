@@ -11,7 +11,7 @@ export function DomainTypeTag({ isWildcard }: DomainTypeTagProps) {
 
   if (isWildcard) {
     return (
-      <Badge variant="secondary" className="bg-secondary/20 text-secondary-foreground">
+      <Badge variant="secondary" className="bg-secondary/20 text-secondary-foreground rounded-full">
         {t('settings.domains.types.wildcard')}
       </Badge>
     );
