@@ -17,6 +17,7 @@ from app.commands.test.command import test_app
 from app.commands.uninstall.command import uninstall_app
 from app.commands.version.command import main_version_callback, version_app
 from app.commands.conflict.command import conflict_app
+from app.commands.setup.command import setup_app
 from app.commands.version.version import VersionCommand
 from app.utils.message import application_add_completion, application_description, application_name, application_version_help
 from app.utils.config import Config
@@ -112,6 +113,7 @@ app.add_typer(service_app, name="service")
 app.add_typer(proxy_app, name="proxy")
 app.add_typer(install_app, name="install")
 app.add_typer(uninstall_app, name="uninstall")
+app.add_typer(setup_app, name="setup")
 app.add_typer(version_app, name="version")
 
 config = Config()

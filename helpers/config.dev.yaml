@@ -47,7 +47,7 @@ services:
       DB_IMAGE: ${DB_IMAGE:-postgres:14-alpine}
       DB_CONTAINER_NAME: ${DB_CONTAINER_NAME:-nixopus-db-container}
       POSTGRES_USER: ${USERNAME:-postgres}
-      POSTGRES_PASSWORD: ${PASSWORD:-changeme}
+      POSTGRES_PASSWORD: ${PASSWORD:-password}
       POSTGRES_DB: ${DB_NAME:-postgres}
       POSTGRES_HOST_AUTH_METHOD: trust
 
@@ -147,7 +147,7 @@ nixopus-config-dir: ./nixopus-dev
 compose-file-path: docker-compose.yml
 clone:
   repo: "https://github.com/raghavyuva/nixopus"
-  branch: "feat/dev_environment"
+  branch: "feat/develop"
   source-path: .
 
 ports: [8080, 7443, 6379, 5432, 22]
