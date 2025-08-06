@@ -18,7 +18,7 @@ export function DomainTypeTag({ isWildcard }: DomainTypeTagProps) {
   }
 
   return (
-    <Badge variant="outline" className="bg-primary/10 text-primary">
+    <Badge variant="outline" className="bg-primary/10 text-primary rounded-full">
       {t('settings.domains.types.standard')}
     </Badge>
   );
