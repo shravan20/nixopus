@@ -320,12 +320,22 @@
         "uploadSuccess": "Avatar uploaded successfully",
         "uploadError": "Failed to upload avatar"
       },
+      "success": {
+        "avatarUpdated": "Avatar updated successfully",
+        "usernameUpdated": "Username updated successfully"
+      },
       "errors": {
         "emptyUsername": "Username cannot be empty",
         "sameUsername": "Please enter a different username",
         "updateFailed": "Failed to update username. Please try again.",
         "resetEmailFailed": "Failed to send reset email",
-        "imageNotImplemented": "Not yet implemented"
+        "imageNotImplemented": "Not yet implemented",
+        "noImageSelected": "No image selected",
+        "avatarUpdateFailed": "Failed to update avatar",
+        "fontUpdateFailed": "Failed to update font settings",
+        "themeUpdateFailed": "Failed to update theme",
+        "languageUpdateFailed": "Failed to update language",
+        "autoUpdateUpdateFailed": "Failed to update auto-update setting"
       }
     },
     "security": {

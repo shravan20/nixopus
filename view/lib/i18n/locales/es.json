@@ -319,12 +319,22 @@
         "uploadSuccess": "Avatar subido exitosamente",
         "uploadError": "Error al subir avatar"
       },
+      "success": {
+        "avatarUpdated": "Avatar actualizado exitosamente",
+        "usernameUpdated": "Nombre de usuario actualizado exitosamente"
+      },
       "errors": {
         "emptyUsername": "El nombre de usuario no puede estar vacío",
         "sameUsername": "Por favor ingresa un nombre de usuario diferente",
         "updateFailed": "Error al actualizar el nombre de usuario. Por favor intenta de nuevo.",
         "resetEmailFailed": "Error al enviar el correo de restablecimiento",
-        "imageNotImplemented": "Aún no implementado"
+        "imageNotImplemented": "Aún no implementado",
+        "noImageSelected": "No se seleccionó ninguna imagen",
+        "avatarUpdateFailed": "Error al actualizar el avatar",
+        "fontUpdateFailed": "Error al actualizar la configuración de fuente",
+        "themeUpdateFailed": "Error al actualizar el tema",
+        "languageUpdateFailed": "Error al actualizar el idioma",
+        "autoUpdateUpdateFailed": "Error al actualizar la configuración de actualización automática"
       }
     },
     "security": {
