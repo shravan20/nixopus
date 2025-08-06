@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import DisabledFeature from '@/components/features/disabled-feature';
 import { ResourceGuard, AnyPermissionGuard } from '@/components/rbac/PermissionGuard';
 import useContainerList from './hooks/use-container-list';
-import { TypographyH1 } from '@/components/ui/typography';
+import { TypographyH1, TypographyMuted } from '@/components/ui/typography';
 
 interface ContainerActionsProps {
   container: any;
@@ -233,7 +233,10 @@ export default function ContainersPage() {
         <div className="relative w-full">
           <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-6 relative z-10">
             <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-              <TypographyH1 className="text-2xl font-bold">{t('containers.title')}</TypographyH1>
+              <span>
+                <TypographyH1 className="text-2xl font-bold">{t('containers.title')}</TypographyH1>
+                <TypographyMuted>{t('containers.description')}</TypographyMuted>
+              </span>
               <div className="flex items-center gap-2 flex-wrap">
                 <Button onClick={handleRefresh} variant="outline" size="sm" disabled={isRefreshing}>
                   {isRefreshing ? (

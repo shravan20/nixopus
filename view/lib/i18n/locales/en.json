@@ -16,6 +16,7 @@
   },
   "containers": {
     "title": "Containers",
+    "description": "Preview all the containers",
     "list": "Container List",
     "name": "Name",
     "image": "Image",

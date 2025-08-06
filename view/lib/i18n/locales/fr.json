@@ -16,6 +16,7 @@
   },
   "containers": {
     "title": "Conteneurs",
+    "description": "Prévisualiser tous les conteneurs",
     "list": "Liste des Conteneurs",
     "name": "Nom",
     "image": "Image",
