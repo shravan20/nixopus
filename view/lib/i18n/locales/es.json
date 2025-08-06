@@ -54,6 +54,7 @@
     "no_logs": "No se encontraron logs",
     "no_containers": "No se encontraron contenedores",
     "more_ports": "+{count} más",
+    "no_ports_exposed": "No hay puertos expuestos",
     "deleteDialog": {
       "title": "Eliminar Contenedor",
       "description": "¿Estás seguro de que quieres eliminar este contenedor?",

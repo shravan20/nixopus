@@ -55,6 +55,7 @@
     "no_logs": "Aucun log trouvé",
     "no_containers": "Aucun conteneur trouvé",
     "more_ports": "+{count} plus",
+    "no_ports_exposed": "Aucun port exposé",
     "deleteDialog": {
       "title": "Supprimer le Conteneur",
       "description": "Êtes-vous sûr de vouloir supprimer ce conteneur ?",
