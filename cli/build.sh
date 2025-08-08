@@ -88,6 +88,8 @@ a = Analysis(
         'app.commands.test.command',
         'app.commands.uninstall.command',
         'app.commands.version.command',
+        'app.commands.conflict.command',
+        'app.commands.setup.command',
     ],
     hookspath=[],
     hooksconfig={},
