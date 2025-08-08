@@ -149,19 +149,6 @@ jobs:
           --prefix / \
           packaging/=/
           
-    - name: Create ZIP package
-      working-directory: cli
-      run: |
-        fpm -s dir -t zip \
-          -n nixopus \
-          -v "0.1.0" \
-          --description "A CLI for Nixopus" \
-          --maintainer "Nixopus <raghavyuva@gmail.com>" \
-          --license "FSL" \
-          --url "https://github.com/nixopus/cli" \
-          --prefix / \
-          packaging/=/
-          
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
@@ -171,7 +158,6 @@ jobs:
           cli/*.rpm
           cli/*.tar
           cli/*.apk
-          cli/*.zip
         retention-days: 30
 
   create-release:
