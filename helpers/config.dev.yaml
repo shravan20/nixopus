@@ -60,28 +60,23 @@ deps:
   curl:
     package: "curl"
     command: "curl"
-    version: ">=7.80.0, <8.0.0"
+    version: ">=7.53.0, <8.0.0"
     version-command: ["curl", "--version"]
   python3:
     package: "python3"
     command: "python3"
-    version: ">=3.8, <3.13"
+    version: ">=3.8.0, <3.13.6"
     version-command: ["python3", "--version"]
   python3-venv:
     package: "python3-venv"
     command: ""
-    version: ">=3.8, <3.13"
+    version: ">=3.8, <3.13.6"
     version-command: ["python3", "--version"]
   poetry:
     package: "poetry"
     command: "poetry"
-    version: ">=1.2.0, <2.0.0"
+    version: ">=2.1.0, <2.1.4"
     version-command: ["poetry", "--version"]
-  redis:
-    package: "redis-server"
-    command: "redis-server"
-    version: ">=7.0.0, <8.0.0"
-    version-command: ["redis-server", "--version"]
   git:
     package: "git"
     command: "git"
@@ -119,7 +114,7 @@ deps:
   node:
     package: "node"
     command: "node"
-    version: ">=18.0.0, <22.0.0"
+    version: ">=18.0.0"
     version-command: ["node", "--version"]
   npm:
     package: "npm"

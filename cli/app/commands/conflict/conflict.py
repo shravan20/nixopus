@@ -1,6 +1,7 @@
 import os
 import subprocess
 import re
+import platform
 from typing import Dict, List, Optional, Any, Tuple
 from packaging import version
 from packaging.specifiers import SpecifierSet
@@ -178,36 +179,42 @@ class VersionParser:
 class ToolVersionChecker:
     """Handles version checking for different tools."""
 
-    # Tool name mappings for command execution
-    TOOL_MAPPING = {"open-ssh": "ssh", "open-sshserver": "sshd", "python3-venv": "python3"}  # TODO: @shravan20 Fix this issue
+    TOOL_MAPPING = {"open-ssh": "ssh", "openssh-server": "sshd", "python3-venv": "python3"}
 
     def __init__(self, logger: LoggerProtocol, deps_config: Optional[Dict[str, Any]] = None, timeout: int = 10):
-        self.timeout = timeout  # Default timeout for individual subprocess calls
+        self.timeout = timeout
         self.logger = logger
         self.deps_config = deps_config or {}
 
     def get_tool_version(self, tool: str) -> Optional[str]:
         """Get version of a tool."""
         try:
-            # get version-command from deps config
             cmd = None
             if tool in self.deps_config:
                 tool_cfg = self.deps_config[tool]
                 cmd = tool_cfg.get("version-command")
-            # Fallback to default if not found
+
+            if tool == "openssh-server" and platform.system() == "Darwin":
+                self.logger.debug("Overriding openssh-server check on macOS to use 'ssh -V'")
+                cmd = ["ssh", "-V"]
+
+            alt_cmd = None
             if not cmd:
-                cmd = [tool, "--version"]
+                command_name = self.TOOL_MAPPING.get(tool, tool)
+                cmd = [command_name, "--version"]
+                alt_cmd = [command_name, "-v"]
 
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=self.timeout)
+            output = result.stdout + result.stderr
 
-            if result.returncode == 0:
-                return VersionParser.parse_version_output(tool, result.stdout)
-            else:
-                # fallback to alternative command if available
-                alt_cmd = [tool, "-v"]
+            if result.returncode == 0 and output.strip():
+                return VersionParser.parse_version_output(tool, output)
+
+            if alt_cmd:
                 result = subprocess.run(alt_cmd, capture_output=True, text=True, timeout=self.timeout)
-                if result.returncode == 0:
-                    return VersionParser.parse_version_output(tool, result.stdout)
+                output = result.stdout + result.stderr
+                if result.returncode == 0 and output.strip():
+                    return VersionParser.parse_version_output(tool, output)
 
         except subprocess.TimeoutExpired:
             self.logger.error(timeout_checking_tool.format(tool=tool))
@@ -215,29 +222,22 @@ class ToolVersionChecker:
         except Exception as e:
             self.logger.error(error_checking_tool_version.format(tool=tool, error=str(e)))
             return None
-
         return None
 
     def check_tool_version(self, tool: str, expected_version: Optional[str]) -> ConflictCheckResult:
         """Check a single tool's version against expected version."""
-        command_name = self.TOOL_MAPPING.get(tool, tool)
-        current_version = self.get_tool_version(command_name)
-
+        current_version = self.get_tool_version(tool)
         if current_version is None:
             return ConflictCheckResult(
                 tool=tool, expected=expected_version, current=None, status=tool_not_found, conflict=True
             )
 
         if expected_version is None or expected_version == "":
-            # Just check existence
             return ConflictCheckResult(
                 tool=tool, expected="present", current=current_version, status=tool_version_compatible, conflict=False
             )
 
-        # Parse version requirement to handle ranges
         normalized_expected = VersionParser.normalize_version_requirement(expected_version)
-
-        # Check version compatibility
         is_compatible = VersionParser.compare_versions(current_version, normalized_expected)
 
         return ConflictCheckResult(

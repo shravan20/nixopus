@@ -178,13 +178,32 @@ class DevSetup:
                 results = conflict_service.check_conflicts()
                 conflicts = [r for r in results if r.conflict]
 
+                missing_tools = []
+                version_mismatches = []
                 if conflicts:
-                    self.logger.error(f"Tool conflicts detected: {len(conflicts)} conflicts")
                     for conflict in conflicts:
-                        self.logger.error(f"  - {conflict.name}: {conflict.message}")
-                    raise Exception("Tool version conflicts detected")
+                        if conflict.current is None:
+                            missing_tools.append(conflict)
+                        else:
+                            version_mismatches.append(conflict)
 
-                self.logger.success("No tool conflicts detected")
+                if version_mismatches:
+                    self.logger.warning(
+                        f"Tool version mismatches found: {len(version_mismatches)}. This is not a blocker for dev setup."
+                    )
+                    for conflict in version_mismatches:
+                        self.logger.warning(f"  - {conflict.tool}: Expected {conflict.expected}, Found {conflict.current}")
+
+                if missing_tools:
+                    self.logger.error(f"Missing required tools: {len(missing_tools)}")
+                    for conflict in missing_tools:
+                        self.logger.error(f"  - {conflict.tool}: {conflict.status}")
+                    raise Exception("Missing required tools. Please install them and try again.")
+
+                if not conflicts:
+                    self.logger.success("No tool conflicts detected.")
+                elif not missing_tools:
+                    self.logger.success("Tool conflict check passed (version mismatches are non-blocking).")
             except Exception as e:
                 self.logger.error(f"Conflict detection failed: {e}")
                 raise
