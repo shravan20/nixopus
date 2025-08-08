@@ -11,6 +11,8 @@ on:
 jobs:
   build-and-package:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
     strategy:
       matrix:
         include:
@@ -51,6 +53,14 @@ jobs:
     - name: Install dependencies
       working-directory: cli
       run: poetry install
+      
+    - name: Extract version from pyproject.toml
+      id: version
+      working-directory: cli
+      run: |
+        VERSION=$(poetry version --short)
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "Extracted version: $VERSION"
       
     - name: Install Ruby and fpm
       run: |
@@ -95,7 +105,7 @@ jobs:
       run: |
         fpm -s dir -t deb \
           -n nixopus \
-          -v "0.1.0" \
+          -v "${{ steps.version.outputs.VERSION }}" \
           -a "$PKG_ARCH" \
           --description "A CLI for Nixopus" \
           --maintainer "Nixopus <raghavyuva@gmail.com>" \
@@ -111,7 +121,7 @@ jobs:
       run: |
         fpm -s dir -t rpm \
           -n nixopus \
-          -v "0.1.0" \
+          -v "${{ steps.version.outputs.VERSION }}" \
           -a "$PKG_ARCH" \
           --description "A CLI for Nixopus" \
           --maintainer "Nixopus <raghavyuva@gmail.com>" \
@@ -126,7 +136,7 @@ jobs:
       run: |
         fpm -s dir -t tar \
           -n nixopus \
-          -v "0.1.0" \
+          -v "${{ steps.version.outputs.VERSION }}" \
           -a "$PKG_ARCH" \
           --description "A CLI for Nixopus" \
           --maintainer "Nixopus <raghavyuva@gmail.com>" \
@@ -140,7 +150,7 @@ jobs:
       run: |
         fpm -s dir -t apk \
           -n nixopus \
-          -v "0.1.0" \
+          -v "${{ steps.version.outputs.VERSION }}" \
           -a "$PKG_ARCH" \
           --description "A CLI for Nixopus" \
           --maintainer "Nixopus <raghavyuva@gmail.com>" \
@@ -168,21 +178,113 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+      with:
+        token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+        
     - name: Download all artifacts
       uses: actions/download-artifact@v4
       with:
         path: ./artifacts
         
+    - name: Update root package.json with CLI version
+      run: |
+        CLI_VERSION="${{ needs.build-and-package.outputs.version }}"
+        echo "Updating root package.json with CLI version: $CLI_VERSION"
+        
+        # Collect all package file names
+        PACKAGE_FILES=()
+        while IFS= read -r -d '' file; do
+          filename=$(basename "$file")
+          PACKAGE_FILES+=("$filename")
+        done < <(find ./artifacts -type f \( -name "*.deb" -o -name "*.rpm" -o -name "*.tar" -o -name "*.apk" \) -print0)
+        
+        echo "Found package files: ${PACKAGE_FILES[@]}"
+        
+        # Convert array to JSON format
+        PACKAGES_JSON=$(printf '%s\n' "${PACKAGE_FILES[@]}" | jq -R . | jq -s .)
+        echo "Packages JSON: $PACKAGES_JSON"
+        
+        # Update package.json with version and package list
+        jq --arg version "$CLI_VERSION" \
+           --argjson packages "$PACKAGES_JSON" \
+           '. + {"cli-version": $version, "cli-packages": $packages}' \
+           package.json > package.json.tmp
+        mv package.json.tmp package.json
+        
+        echo "Updated package.json content:"
+        jq '.["cli-version"], .["cli-packages"]' package.json
+        
+    - name: Create Pull Request for package.json update
+      run: |
+        CLI_VERSION="${{ needs.build-and-package.outputs.version }}"
+        BRANCH_NAME="update-cli-version-$CLI_VERSION"
+        
+        # Configure git
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        
+        # Check if changes exist
+        if git diff --quiet package.json; then
+          echo "No changes to package.json, skipping PR creation"
+          exit 0
+        fi
+        
+        # Create new branch
+        git checkout -b "$BRANCH_NAME"
+        
+        # Add and commit changes
+        git add package.json
+        git commit -m "chore: update cli-version to $CLI_VERSION and cli-packages array
+        
+        - Updated cli-version to $CLI_VERSION
+        - Updated cli-packages array with available package files
+        
+        This PR was automatically created by the CLI release workflow to keep the root package.json in sync with the CLI version from pyproject.toml."
+        
+        # Push branch
+        git push origin "$BRANCH_NAME"
+        
+        # Create PR (only if branch doesn't exist)
+        if ! gh pr list --head "$BRANCH_NAME" --json number --jq '. | length' | grep -q "0"; then
+          echo "PR already exists for branch $BRANCH_NAME"
+          exit 0
+        fi
+        
+        gh pr create \
+          --title "chore: update cli-version to $CLI_VERSION" \
+          --body "This PR updates the \`cli-version\` field and \`cli-packages\` array in the root package.json to match the current CLI version ($CLI_VERSION) from the pyproject.toml file.
+
+        **Changes:**
+        - Updated \`cli-version\` field to \`$CLI_VERSION\`
+        - Updated \`cli-packages\` array with available package files
+        
+        **Available Packages:**
+        $(jq -r '.["cli-packages"][]' package.json | sed 's/^/- /')
+        
+        **Download URLs:**
+        $(jq -r '.["cli-packages"][]' package.json | sed "s|^|- https://github.com/raghavyuva/nixopus/releases/download/nixopus-$CLI_VERSION/|")
+        
+        This PR was automatically created by the CLI release workflow." \
+          --base master \
+          --head "$BRANCH_NAME" \
+          --label "automated" \
+          --label "cli" || echo "Failed to create PR, but continuing with release"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
     - name: Create GitHub Release
       run: |
-        RELEASE_TAG="cli-packages-$(date +%Y%m%d-%H%M%S)"
+        CLI_VERSION="${{ needs.build-and-package.outputs.version }}"
+        RELEASE_TAG="nixopus-$CLI_VERSION"
         
+        echo "Creating release with tag: $RELEASE_TAG"
         echo "Files to upload:"
         find ./artifacts -type f \( -name "*.deb" -o -name "*.rpm" -o -name "*.tar" -o -name "*.apk" \) -exec ls -la {} \;
         
         gh release create "$RELEASE_TAG" \
-          --title "CLI Packages Release" \
+          --title "Nixopus CLI v$CLI_VERSION" \
+          --notes "Nixopus CLI v$CLI_VERSION - Packages: DEB, RPM, TAR, APK for x86_64 and ARM64" \
           --target ${{ github.ref_name }} \
           --prerelease
         
