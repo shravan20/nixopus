@@ -173,71 +173,28 @@ jobs:
           cli/*.apk
           cli/*.zip
         retention-days: 30
-        
-    - name: Create release branch and PR
-      if: github.ref == 'refs/heads/feat/cli_releaser' && github.event_name == 'push'
-      run: |
-        git config --global user.name "github-actions[bot]"
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        
-        RELEASE_BRANCH="release/cli-packages-$(date +%Y%m%d-%H%M%S)-${{ matrix.arch }}"
-        git checkout -b $RELEASE_BRANCH
-        
-        mkdir -p releases/cli/${{ matrix.arch }}
-        
-        cp cli/*.deb releases/cli/${{ matrix.arch }}/ 2>/dev/null || true
-        cp cli/*.rpm releases/cli/${{ matrix.arch }}/ 2>/dev/null || true
-        cp cli/*.tar releases/cli/${{ matrix.arch }}/ 2>/dev/null || true
-        cp cli/*.apk releases/cli/${{ matrix.arch }}/ 2>/dev/null || true
-        cp cli/*.zip releases/cli/${{ matrix.arch }}/ 2>/dev/null || true
-        
-        git add releases/
-        git commit -m "Add CLI packages for ${{ matrix.arch }} architecture
 
-        Built from commit: ${{ github.sha }}
-        Packages included:
-        - DEB (Debian/Ubuntu)
-        - RPM (RedHat/CentOS/Fedora)
-        - TAR.GZ (Compressed archive)
-        - APK (Alpine Linux)
-        - ZIP (Simple archive)
+  create-release:
+    needs: build-and-package
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/feat/cli_releaser' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: ./artifacts
         
-        Generated with GitHub Actions"
-        
-        git push origin $RELEASE_BRANCH
-        
-        gh pr create \
-          --title "CLI Packages Release - ${{ matrix.arch }} Architecture" \
-          --body "$(cat <<'EOF'
-        ## CLI Package Release
-        
-        This PR contains compiled CLI packages for the **${{ matrix.arch }}** architecture.
-        
-        ### Packages Included
-        - **DEB** - Debian/Ubuntu packages
-        - **RPM** - RedHat/CentOS/Fedora packages  
-        - **TAR.GZ** - Compressed archives
-        - **APK** - Alpine Linux packages
-        - **ZIP** - Simple zip archives
-        
-        ### Build Details
-        - **Source Commit**: ${{ github.sha }}
-        - **Architecture**: ${{ matrix.arch }}
-        - **Build Date**: $(date)
-        - **Workflow**: ${{ github.workflow }}
-        
-        ### Package Location
-        All packages are located in: `releases/cli/${{ matrix.arch }}/`
-        
-        ### Testing
-        - [ ] Packages build successfully
-        - [ ] All target formats generated
-        - [ ] Ready for distribution
-        
-        Generated with GitHub Actions
-        EOF
-        )" \
-          --head $RELEASE_BRANCH \
-          --base master
+    - name: Create GitHub Release
+      run: |
+        RELEASE_TAG="cli-packages-$(date +%Y%m%d-%H%M%S)"
+        gh release create "$RELEASE_TAG" \
+          --title "CLI Packages Release" \
+          --target ${{ github.ref_name }} \
+          --prerelease \
+          ./artifacts/*/*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
