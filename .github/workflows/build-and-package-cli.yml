@@ -177,10 +177,15 @@ jobs:
     - name: Create GitHub Release
       run: |
         RELEASE_TAG="cli-packages-$(date +%Y%m%d-%H%M%S)"
+        
+        echo "Files to upload:"
+        find ./artifacts -type f \( -name "*.deb" -o -name "*.rpm" -o -name "*.tar" -o -name "*.apk" \) -exec ls -la {} \;
+        
         gh release create "$RELEASE_TAG" \
           --title "CLI Packages Release" \
           --target ${{ github.ref_name }} \
-          --prerelease \
-          ./artifacts/*/*
+          --prerelease
+        
+        find ./artifacts -type f \( -name "*.deb" -o -name "*.rpm" -o -name "*.tar" -o -name "*.apk" \) -exec gh release upload "$RELEASE_TAG" {} \;
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
