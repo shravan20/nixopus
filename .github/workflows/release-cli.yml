@@ -223,8 +223,8 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: 'chore: update cli-version to ${{ needs.build-and-package.outputs.version }} and cli-packages array'
-          title: 'chore: update cli-version to ${{ needs.build-and-package.outputs.version }}'
+          commit-message: "chore: update cli-version to ${{ needs.build-and-package.outputs.version }} and cli-packages array"
+          title: "chore: update cli-version to ${{ needs.build-and-package.outputs.version }}"
           body: |
             This PR updates the `cli-version` field and `cli-packages` array in the root package.json to match the current CLI version (${{ needs.build-and-package.outputs.version }}) from the pyproject.toml file.
 
@@ -233,9 +233,9 @@ jobs:
             - Updated `cli-packages` array with available package files
 
             This PR was automatically created by the CLI release workflow.
-          branch: 'chore/update-cli-version-${{ needs.build-and-package.outputs.version }}'
+          branch: "chore/update-cli-version-${{ needs.build-and-package.outputs.version }}"
           delete-branch: true
-          base: 'master'
+          base: "master"
 
       - name: Create GitHub Release
         run: |
