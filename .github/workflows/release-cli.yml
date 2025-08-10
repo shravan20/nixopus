@@ -2,10 +2,10 @@ name: Build and Package CLI
 
 on:
   push:
-    branches: [feat/cli_releaser]
+    branches: [master]
     paths:
       - "cli/**"
-      - ".github/workflows/build-and-package-cli.yml"
+      - ".github/workflows/release-cli.yml"
   workflow_dispatch:
 
 jobs:
@@ -173,7 +173,7 @@ jobs:
   create-release:
     needs: build-and-package
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/feat/cli_releaser' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
 
     steps:
       - name: Checkout code
@@ -267,9 +267,8 @@ jobs:
 
           This PR was automatically created by the CLI release workflow." \
             --base master \
-            --head "$BRANCH_NAME" \
-            --label "automated" \
-            --label "cli" || echo "Failed to create PR, but continuing with release"
+            --head "$BRANCH_NAME" || echo "Failed to create PR, but continuing with release"
+            
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
