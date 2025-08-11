@@ -29,6 +29,25 @@ export function ModeToggler() {
         return () => document.removeEventListener('keydown', down);
     }, []);
 
+    React.useEffect(() => {
+        const up = (e: KeyboardEvent) => {
+            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                const currentSelected = document.querySelector(
+                    '[aria-selected="true"]',
+                );
+                if (currentSelected) {
+                    const theme = currentSelected.getAttribute('data-theme');
+                    if (theme) {
+                        handleOnFocus(theme);
+                    }
+                }
+            }
+        };
+
+        document.addEventListener('keyup', up);
+        return () => document.removeEventListener('keyup', up);
+    }, []);
+
     const handleOnFocus = (theme: string) => {
         setTheme(theme);
     };
@@ -60,10 +79,10 @@ export function ModeToggler() {
                         <Palette className="h-4 w-4 text-primary" />
                     </Button>
                 </div>
-        </div>
+            </div>
             <CommandDialog open={open} onOpenChange={setOpen}>
                 <CommandInput placeholder="Search for a theme" />
-                <CommandList>
+                <CommandList onMouseLeave={() => setTheme(prevTheme)}>
                     <CommandEmpty>No results found.</CommandEmpty>
                     <CommandGroup heading="Themes">
                         {palette.map((themeName) => (
@@ -71,7 +90,7 @@ export function ModeToggler() {
                                 key={themeName}
                                 onSelect={() => handleSelected(themeName)}
                                 onMouseEnter={() => handleOnFocus(themeName)}
-                                onMouseLeave={() => setTheme(prevTheme)}
+                                data-theme={themeName}
                                 className="flex cursor-pointer items-center justify-between"
                             >
                                 <div className="flex items-center">
