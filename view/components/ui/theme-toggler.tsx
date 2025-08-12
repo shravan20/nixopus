@@ -16,6 +16,7 @@ export function ModeToggler() {
     const [open, setOpen] = React.useState(false);
     const { setTheme, theme } = useTheme();
     const [prevTheme, setPrevTheme] = React.useState<string>(theme || 'light');
+    const startThemeRef = React.useRef<string>(theme || 'light');
 
     React.useEffect(() => {
         const down = (e: KeyboardEvent) => {
@@ -80,9 +81,21 @@ export function ModeToggler() {
                     </Button>
                 </div>
             </div>
-            <CommandDialog open={open} onOpenChange={setOpen}>
+            <CommandDialog
+                open={open}
+                onOpenChange={(nextOpen) => {
+                    if (nextOpen) {
+                        // capture the theme at dialog open for preview revert
+                        startThemeRef.current = theme || prevTheme;
+                    } else {
+                        // if dialog is closed without confirming selection, revert to start theme
+                        setTheme(prevTheme);
+                    }
+                    setOpen(nextOpen);
+                }}
+            >
                 <CommandInput placeholder="Search for a theme" />
-                <CommandList onMouseLeave={() => setTheme(prevTheme)}>
+                <CommandList onMouseLeave={() => setTheme(startThemeRef.current)}>
                     <CommandEmpty>No results found.</CommandEmpty>
                     <CommandGroup heading="Themes">
                         {palette.map((themeName) => (
