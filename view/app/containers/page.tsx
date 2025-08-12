@@ -4,7 +4,7 @@ import { RefreshCw, Play, StopCircle, Trash2, Loader2, Scissors } from 'lucide-r
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { cn, isNixopusContainer } from '@/lib/utils';
 import ContainersLoading from './skeleton';
 import { DeleteDialog } from '@/components/ui/delete-dialog';
 import { FeatureNames } from '@/types/feature-flags';
@@ -21,6 +21,9 @@ interface ContainerActionsProps {
 }
 
 const ContainerActions = ({ container, onAction }: ContainerActionsProps) => {
+  const containerName: string = typeof container?.name === 'string' ? container.name : '';
+  const isProtected = isNixopusContainer(containerName);
+
   return (
     <div className="flex gap-2">
       <ResourceGuard
@@ -32,6 +35,7 @@ const ContainerActions = ({ container, onAction }: ContainerActionsProps) => {
           <Button
             variant="ghost"
             size="icon"
+            disabled={isProtected}
             onClick={(e) => {
               e.stopPropagation();
               onAction(container.id, 'start');
@@ -44,6 +48,7 @@ const ContainerActions = ({ container, onAction }: ContainerActionsProps) => {
           <Button
             variant="ghost"
             size="icon"
+            disabled={isProtected}
             onClick={(e) => {
               e.stopPropagation();
               onAction(container.id, 'stop');
@@ -61,6 +66,7 @@ const ContainerActions = ({ container, onAction }: ContainerActionsProps) => {
         <Button
           variant="ghost"
           size="icon"
+          disabled={isProtected}
           onClick={(e) => {
             e.stopPropagation();
             onAction(container.id, 'remove');
