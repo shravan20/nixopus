@@ -14,12 +14,12 @@ from app.commands.clone.clone import (
     GitCommandBuilder,
 )
 from app.commands.clone.messages import (
-    successfully_cloned,
-    dry_run_mode,
     dry_run_command,
     dry_run_force_mode,
+    dry_run_mode,
     path_exists_will_overwrite,
     path_exists_would_fail,
+    successfully_cloned,
 )
 from app.utils.lib import DirectoryManager
 from app.utils.logger import Logger
@@ -424,12 +424,12 @@ class TestClone:
             output="text",
             dry_run=True,
         )
-        
+
         with patch.object(CloneService, "clone_and_format") as mock_clone_and_format:
             mock_clone_and_format.return_value = dry_run_mode
-            
+
             formatted = self.clone.clone_and_format(config)
-            
+
             assert dry_run_mode in formatted
 
     def test_debug_logging_enabled(self):
@@ -443,13 +443,13 @@ class TestClone:
             output="text",
             dry_run=False,
         )
-        
+
         logger = Mock(spec=Logger)
         clone_operation = Clone(logger=logger)
-        
+
         # Patch only GitClone.clone_repository to simulate a successful clone
         with patch("app.commands.clone.clone.GitClone.clone_repository", return_value=(True, None)):
             result = clone_operation.clone(config)
-            
+
             # Verify that debug logging was called
             assert logger.debug.called
