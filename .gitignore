@@ -65,3 +65,5 @@ poetry.lock
 
 artifacts/
 cli/nixopus.spec
+
+**/.DS_Store
