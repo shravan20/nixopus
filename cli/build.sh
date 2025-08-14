@@ -176,8 +176,7 @@ poetry run pyinstaller --clean --noconfirm $SPEC_FILE" || {
 				log_error "Dockerized build failed"
 				exit 1
 			}
-		return
-		fi
+        return
 
         log_warning "Unsupported arch $ARCH for manylinux; building on host (may require newer glibc)"
     fi
