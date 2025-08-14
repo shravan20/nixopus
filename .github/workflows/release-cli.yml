@@ -6,6 +6,10 @@ on:
     paths:
       - "cli/**"
       - ".github/workflows/release-cli.yml"
+  pull_request:
+    paths:
+      - "cli/**"
+      - ".github/workflows/release-cli.yml"
   workflow_dispatch:
 
 jobs:
