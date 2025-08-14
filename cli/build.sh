@@ -274,11 +274,19 @@ create_release_archive() {
     cd $BUILD_DIR
     
 
+    # Collect files that actually exist
+    FILES_TO_INCLUDE=("$APP_NAME")
+    if [[ -d "$BINARY_DIR_NAME" ]]; then
+        FILES_TO_INCLUDE+=("$BINARY_DIR_NAME")
+    else
+        log_warning "Bundled binary directory $BINARY_DIR_NAME not found; archiving wrapper only"
+    fi
+
     if [[ "$OS" == "darwin" || "$OS" == "linux" ]]; then
-        tar -czf "${ARCHIVE_NAME}.tar.gz" "$BINARY_DIR_NAME" "$APP_NAME"
+        tar -czf "${ARCHIVE_NAME}.tar.gz" "${FILES_TO_INCLUDE[@]}"
         log_success "Archive created: $BUILD_DIR/${ARCHIVE_NAME}.tar.gz"
     elif [[ "$OS" == "mingw"* || "$OS" == "cygwin"* || "$OS" == "msys"* ]]; then
-        zip -r "${ARCHIVE_NAME}.zip" "$BINARY_DIR_NAME" "$APP_NAME"
+        zip -r "${ARCHIVE_NAME}.zip" "${FILES_TO_INCLUDE[@]}"
         log_success "Archive created: $BUILD_DIR/${ARCHIVE_NAME}.zip"
     fi
     

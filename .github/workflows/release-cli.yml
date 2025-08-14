@@ -72,7 +72,7 @@ jobs:
             ./build.sh --dev --no-test --no-cleanup
           else
             echo "Running production build (PyInstaller)"
-            ./build.sh --no-test --no-cleanup
+          ./build.sh --no-test --no-cleanup --no-archive
           fi
 
       - name: Prepare binary for packaging
