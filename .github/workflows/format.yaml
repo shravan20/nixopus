@@ -1,6 +1,13 @@
 name: Format Nixopus
 
 on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'api/**'
+      - 'view/**'
+      - 'cli/**'
   push:
     branches:
       - master
@@ -36,8 +43,13 @@ jobs:
         working-directory: api
         run: |
           echo "Running gofmt..."
+          echo "Files before formatting:"
+          git status --porcelain
           gofmt -l -w .
-          git status
+          echo "Files after formatting:"
+          git status --porcelain
+          echo "Git diff:"
+          git diff --name-only
       
       - name: Commit API changes
         id: api-commit
@@ -53,15 +65,27 @@ jobs:
           skip_fetch: true
           skip_checkout: true
           disable_globbing: false
+      
+      - name: API formatting result
+        run: |
+          if [[ "${{ steps.api-commit.outputs.changes_detected }}" == "true" ]]; then
+            echo "API formatting changes committed"
+          else
+            echo "No API formatting changes needed"
+          fi
 
   format-view:
     name: Format View
     runs-on: ubuntu-latest
+    needs: format-api
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Pull latest changes
+        run: git pull origin ${{ github.head_ref }}
       
       - uses: actions/setup-node@v4
         with:
@@ -78,7 +102,15 @@ jobs:
       
       - name: Run Prettier
         working-directory: view
-        run: yarn format
+        run: |
+          echo "Running Prettier formatting..."
+          echo "Files before formatting:"
+          git status --porcelain
+          yarn format
+          echo "Files after formatting:"
+          git status --porcelain
+          echo "Git diff:"
+          git diff --name-only
       
       - name: Commit View changes
         id: view-commit
@@ -94,15 +126,27 @@ jobs:
           skip_fetch: true
           skip_checkout: true
           disable_globbing: false
+      
+      - name: View formatting result
+        run: |
+          if [[ "${{ steps.view-commit.outputs.changes_detected }}" == "true" ]]; then
+            echo "View formatting changes committed"
+          else
+            echo "No View formatting changes needed"
+          fi
 
   format-cli:
     name: Format CLI
     runs-on: ubuntu-latest
+    needs: format-view
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Pull latest changes
+        run: git pull origin ${{ github.head_ref }}
       
       - uses: actions/setup-python@v5
         with:
@@ -122,7 +166,15 @@ jobs:
       
       - name: Run formatting
         working-directory: cli
-        run: make format
+        run: |
+          echo "Running CLI formatting..."
+          echo "Files before formatting:"
+          git status --porcelain
+          make format
+          echo "Files after formatting:"
+          git status --porcelain
+          echo "Git diff:"
+          git diff --name-only
       
       - name: Commit CLI changes
         id: cli-commit
@@ -138,3 +190,11 @@ jobs:
           skip_fetch: true
           skip_checkout: true
           disable_globbing: false
+      
+      - name: CLI formatting result
+        run: |
+          if [[ "${{ steps.cli-commit.outputs.changes_detected }}" == "true" ]]; then
+            echo "CLI formatting changes committed"
+          else
+            echo "No CLI formatting changes needed"
+          fi

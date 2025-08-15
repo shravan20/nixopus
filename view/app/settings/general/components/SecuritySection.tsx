@@ -38,9 +38,7 @@ function SecuritySection({
               <Lock size={16} />
               {t('settings.security.password.reset.label')}
             </Label>
-            <TypographyMuted>
-              {t('settings.security.password.reset.description')}
-            </TypographyMuted>
+            <TypographyMuted>{t('settings.security.password.reset.description')}</TypographyMuted>
           </div>
 
           {emailSent ? (

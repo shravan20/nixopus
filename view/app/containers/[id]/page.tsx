@@ -103,11 +103,7 @@ export default function ContainerDetailsPage() {
   const isProtected = isNixopusContainer(container?.name);
 
   return (
-    <ResourceGuard
-      resource="container"
-      action="read"
-      loadingFallback={<ContainerDetailsLoading />}
-    >
+    <ResourceGuard resource="container" action="read" loadingFallback={<ContainerDetailsLoading />}>
       <div className="container mx-auto py-8 max-w-5xl">
         <div className="space-y-8">
           <div className="flex items-center justify-between mb-6 pb-4 border-b">
@@ -208,11 +204,7 @@ export default function ContainerDetailsPage() {
             </Tabs>
           </div>
         </div>
-        <ResourceGuard
-          resource="container"
-          action="delete"
-          loadingFallback={null}
-        >
+        <ResourceGuard resource="container" action="delete" loadingFallback={null}>
           <DeleteDialog
             title={t('containers.deleteDialog.title')}
             description={t('containers.deleteDialog.description')}
