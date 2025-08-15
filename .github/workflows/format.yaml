@@ -1,6 +1,13 @@
 name: Format Nixopus
 
 on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'api/**'
+      - 'view/**'
+      - 'cli/**'
   push:
     branches:
       - master
