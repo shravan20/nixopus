@@ -30,7 +30,6 @@ function DashboardPage() {
   });
   const { isFeatureEnabled, isLoading: isFeatureFlagsLoading } = useFeatureFlags();
 
-
   if (isFeatureFlagsLoading) {
     return <Skeleton />;
   }

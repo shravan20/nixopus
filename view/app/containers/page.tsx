@@ -97,7 +97,9 @@ const ContainerInfo = ({ container }: ContainerInfoProps) => {
               </Badge>
             ))
           ) : (
-            <span className="text-xs text-muted-foreground">{t("containers.no_ports_exposed")}</span>
+            <span className="text-xs text-muted-foreground">
+              {t('containers.no_ports_exposed')}
+            </span>
           )}
         </div>
       </div>
@@ -138,16 +140,15 @@ const ContainerCard = ({
         <div className="flex items-start justify-between mb-4">
           <div className="space-y-2 flex-1 min-w-0">
             <h3 className="text-xl font-semibold truncate">{container.name}</h3>
-            <p className="text-sm text-muted-foreground truncate" title={container.image}>{container.image}</p>
+            <p className="text-sm text-muted-foreground truncate" title={container.image}>
+              {container.image}
+            </p>
             <Badge variant={container.status === 'running' ? 'default' : 'secondary'}>
               {container.status}
             </Badge>
           </div>
           <div className="flex-shrink-0 ml-4">
-            <ContainerActions
-              container={container}
-              onAction={onAction}
-            />
+            <ContainerActions container={container} onAction={onAction} />
           </div>
         </div>
         <div className="mt-auto">
@@ -157,7 +158,6 @@ const ContainerCard = ({
     </Card>
   );
 };
-
 
 export default function ContainersPage() {
   const {
@@ -197,11 +197,7 @@ export default function ContainersPage() {
   // TODO: Add pagination for containers listing
 
   return (
-    <ResourceGuard
-      resource="container"
-      action="read"
-      loadingFallback={<ContainersLoading />}
-    >
+    <ResourceGuard resource="container" action="read" loadingFallback={<ContainersLoading />}>
       <div className="min-h-screen w-full overflow-x-hidden">
         <div className="relative w-full">
           <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-6 relative z-10">
@@ -223,7 +219,11 @@ export default function ContainersPage() {
                   permissions={['container:delete']}
                   loadingFallback={<Skeleton className="h-8 w-20" />}
                 >
-                  <Button variant="outline" size="sm" onClick={() => setShowPruneImagesConfirm(true)}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowPruneImagesConfirm(true)}
+                  >
                     <Trash2 className="mr-2 h-4 w-4" />
                     {t('containers.prune_images')}
                   </Button>
@@ -260,10 +260,7 @@ export default function ContainersPage() {
             )}
           </div>
         </div>
-        <AnyPermissionGuard
-          permissions={['container:delete']}
-          loadingFallback={null}
-        >
+        <AnyPermissionGuard permissions={['container:delete']} loadingFallback={null}>
           <DeleteDialog
             title={t('containers.deleteDialog.title')}
             description={t('containers.deleteDialog.description')}
