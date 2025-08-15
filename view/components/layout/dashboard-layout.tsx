@@ -139,8 +139,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </Button>
               <KeyboardShortcuts />
               <RBACGuard resource="user" action="update">
-              <ModeToggler />
-            </RBACGuard>
+                <ModeToggler />
+              </RBACGuard>
             </div>
           </div>
         </header>

@@ -129,11 +129,7 @@ export function FileItem({
   );
 
   return (
-    <ResourceGuard
-      resource="file-manager"
-      action="read"
-      loadingFallback={null}
-    >
+    <ResourceGuard resource="file-manager" action="read" loadingFallback={null}>
       <FileContextMenu
         isItem
         onInfo={() => setIsDialogOpen(true)}
@@ -151,11 +147,7 @@ export function FileItem({
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <FileInfo file={file} isLoading={isSizeLoading} fileSize={fileSize || null} />
         </Dialog>
-        <ResourceGuard
-          resource="file-manager"
-          action="delete"
-          loadingFallback={null}
-        >
+        <ResourceGuard resource="file-manager" action="delete" loadingFallback={null}>
           <DeleteDialog
             title={t('fileManager.deleteDialog.title')}
             description={

@@ -30,16 +30,14 @@ function Page() {
   const totalPages = Math.ceil(totalDeployments / deploymentsPerPage);
 
   return (
-    <ResourceGuard 
-      resource="deploy" 
-      action="read"
-      loadingFallback={<Skeleton className="h-96" />}
-    >
+    <ResourceGuard resource="deploy" action="read" loadingFallback={<Skeleton className="h-96" />}>
       <div className="container mx-auto py-6 space-y-8 max-w-4xl 2xl:max-w-7xl">
         <ApplicationDetailsHeader application={application} />
         <Tabs defaultValue={defaultTab} className="w-full">
           <TabsList>
-            <TabsTrigger value="monitoring">{t('selfHost.application.tabs.monitoring')}</TabsTrigger>
+            <TabsTrigger value="monitoring">
+              {t('selfHost.application.tabs.monitoring')}
+            </TabsTrigger>
             <TabsTrigger value="configuration">
               {t('selfHost.application.tabs.configuration')}
             </TabsTrigger>

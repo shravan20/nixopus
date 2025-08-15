@@ -47,13 +47,8 @@ function page() {
 
   const renderContent = () => {
     return (
-      <AnyPermissionGuard 
-        permissions={['deploy:create']}
-        loadingFallback={null}
-      >
-        {inGitHubFlow && (
-          <GitHubAppSetup GetGithubConnectors={GetGithubConnectors} />
-        )}
+      <AnyPermissionGuard permissions={['deploy:create']} loadingFallback={null}>
+        {inGitHubFlow && <GitHubAppSetup GetGithubConnectors={GetGithubConnectors} />}
 
         {!showApplications && !inGitHubFlow && (
           <>
@@ -69,8 +64,8 @@ function page() {
   };
 
   return (
-    <ResourceGuard 
-      resource="deploy" 
+    <ResourceGuard
+      resource="deploy"
       action="read"
       loadingFallback={<Skeleton />}
       fallback={
@@ -84,7 +79,7 @@ function page() {
     >
       <div className="container mx-auto py-6 space-y-8 max-w-4xl">
         {renderContent()}
-        
+
         {showApplications && (
           <>
             <DahboardUtilityHeader<Application>
@@ -96,10 +91,7 @@ function page() {
               label={t('selfHost.page.title')}
               className="mt-5 mb-5 justify-between items-center"
               children={
-                <AnyPermissionGuard 
-                  permissions={['deploy:create']}
-                  loadingFallback={null}
-                >
+                <AnyPermissionGuard permissions={['deploy:create']} loadingFallback={null}>
                   <Button
                     className="mb-4 w-max flex justify-self-end mt-4"
                     onClick={() => {
@@ -120,7 +112,8 @@ function page() {
             ) : (
               <>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                  {applications && applications.map((app: any) => <AppItem key={app.id} {...app} />)}
+                  {applications &&
+                    applications.map((app: any) => <AppItem key={app.id} {...app} />)}
                 </div>
 
                 {totalPages > 1 && (

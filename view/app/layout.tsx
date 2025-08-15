@@ -60,7 +60,13 @@ const ChildrenWrapper = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange  themes={palette}>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+        themes={palette}
+      >
         <WebSocketProvider>
           <FeatureFlagsProvider>
             {pathname === '/' || pathname === '/login' || pathname === '/register' ? (

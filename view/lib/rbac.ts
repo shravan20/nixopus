@@ -1,7 +1,7 @@
 import { useAppSelector } from '@/redux/hooks';
 import { hasPermission } from './permission';
 
-export type Resource = 
+export type Resource =
   | 'organization'
   | 'user'
   | 'role'
@@ -55,4 +55,4 @@ export const useRBAC = () => {
     hasAllPermissions,
     isLoading
   };
-}; 
+};

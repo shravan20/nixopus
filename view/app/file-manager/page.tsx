@@ -78,11 +78,7 @@ function FileManager() {
   }
 
   return (
-    <ResourceGuard 
-      resource="file-manager" 
-      action="read"
-      loadingFallback={<Skeleton />}
-    >
+    <ResourceGuard resource="file-manager" action="read" loadingFallback={<Skeleton />}>
       <FileContextMenu
         showHidden={showHidden}
         setShowHidden={setShowHidden}
@@ -136,8 +132,12 @@ function FileManager() {
                 <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                   <SortMethods files={visibleFiles} onSortChange={handleSortChange} />
                   <LayoutSwitcher layout={layout} setLayout={setLayout} />
-                  <AnyPermissionGuard 
-                    permissions={['file-manager:create', 'file-manager:update', 'file-manager:delete']}
+                  <AnyPermissionGuard
+                    permissions={[
+                      'file-manager:create',
+                      'file-manager:update',
+                      'file-manager:delete'
+                    ]}
                   >
                     <Actions
                       refetch={refetch}
@@ -194,11 +194,7 @@ function FileManager() {
                 </div>
               )}
             </div>
-            <ResourceGuard 
-              resource="file-manager" 
-              action="delete"
-              loadingFallback={null}
-            >
+            <ResourceGuard resource="file-manager" action="delete" loadingFallback={null}>
               <DeleteDialog
                 title={t('fileManager.deleteDialog.title')}
                 description={
@@ -206,7 +202,9 @@ function FileManager() {
                     ? t('fileManager.deleteDialog.descriptionDirectory', {
                         name: fileToDelete.name || ''
                       })
-                    : t('fileManager.deleteDialog.descriptionFile', { name: fileToDelete?.name || '' })
+                    : t('fileManager.deleteDialog.descriptionFile', {
+                        name: fileToDelete?.name || ''
+                      })
                 }
                 onConfirm={() => {
                   if (fileToDelete) {
