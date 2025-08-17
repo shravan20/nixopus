@@ -10,6 +10,7 @@ import (
 	"github.com/go-fuego/fuego"
 	"github.com/joho/godotenv"
 	"github.com/raghavyuva/nixopus-api/internal/cache"
+	"github.com/raghavyuva/nixopus-api/internal/redisclient"
 	audit "github.com/raghavyuva/nixopus-api/internal/features/audit/controller"
 	auth "github.com/raghavyuva/nixopus-api/internal/features/auth/controller"
 	authService "github.com/raghavyuva/nixopus-api/internal/features/auth/service"
@@ -49,10 +50,11 @@ type Router struct {
 
 func NewRouter(app *storage.App) *Router {
 	// Initialize cache
-	cache, err := cache.NewCache(os.Getenv("REDIS_URL"))
+	redisClient, err := redisclient.New(os.Getenv("REDIS_URL"))
 	if err != nil {
-		log.Fatal("Error creating cache", err)
+		log.Fatal("Error creating redis client", err)
 	}
+	cache := cache.NewCacheClient(redisClient)
 	return &Router{
 		app:   app,
 		cache: cache,
