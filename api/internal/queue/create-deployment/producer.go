@@ -8,14 +8,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/go-redis/redis_rate/v9"
+	"github.com/redis/go-redis/extra/redisrate"
+	"github.com/redis/go-redis/v9"
 	"github.com/raghavyuva/nixopus-api/internal/queue"
 	"github.com/vmihailenco/taskq/v3"
 )
 
-var CreateDeploymentQueue = queue.QueueFactory.RegisterQueue(&taskq.QueueOptions{
+var CreateDeploymentQueue = queue.RegisterQueue(&taskq.QueueOptions{
 	Name:                 "create-deployment",
-	Redis:                queue.Redis,
 	ConsumerIdleTimeout:  10 * time.Minute,
 	MinNumWorker:         1,
 	MaxNumWorker:         10,
@@ -25,12 +25,12 @@ var CreateDeploymentQueue = queue.QueueFactory.RegisterQueue(&taskq.QueueOptions
 	WaitTimeout:          10 * time.Second,
 	BufferSize:           100,
 	PauseErrorsThreshold: 100,
-	RateLimit: redis_rate.Limit{
+	RateLimit: redisrate.Limit{
 		Rate:   100,
 		Burst:  100,
 		Period: 1 * time.Second,
 	},
-	RateLimiter: redis_rate.NewLimiter(queue.Redis),
+	RateLimiter: redisrate.NewLimiter(redis.NewClient(&redis.Options{Addr: ":6379"})),
 })
 
 var Task1 = taskq.RegisterTask(&taskq.TaskOptions{
@@ -60,7 +60,11 @@ func WaitSignal() os.Signal {
 func main() {
 	ctx := context.Background()
 
-	pong, err := queue.Redis.Ping(ctx).Result()
+	// Initialize queue with a shared client for this example.
+	client := redis.NewClient(&redis.Options{Addr: ":6379"})
+	queue.Init(client)
+
+	pong, err := client.Ping(ctx).Result()
 	if err != nil {
 		fmt.Printf("Failed to connect to Redis: %v\n", err)
 		os.Exit(1)
