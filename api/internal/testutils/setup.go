@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
 	"github.com/raghavyuva/nixopus-api/internal/cache"
+	"github.com/raghavyuva/nixopus-api/internal/redisclient"
 	authService "github.com/raghavyuva/nixopus-api/internal/features/auth/service"
 	user_storage "github.com/raghavyuva/nixopus-api/internal/features/auth/storage"
 	authTypes "github.com/raghavyuva/nixopus-api/internal/features/auth/types"
@@ -184,10 +185,11 @@ func NewTestSetup() *TestSetup {
 	permStorage := &permissions_storage.PermissionStorage{DB: testDB, Ctx: ctx}
 	roleStorage := &role_storage.RoleStorage{DB: testDB, Ctx: ctx}
 	orgStorage := &organization_storage.OrganizationStore{DB: testDB, Ctx: ctx}
-	cache, err := cache.NewCache(getEnvOrDefault("REDIS_URL", "redis://localhost:6379"))
+	redisClient, err := redisclient.New(getEnvOrDefault("REDIS_URL", "redis://localhost:6379"))
 	if err != nil {
-		panic(fmt.Sprintf("failed to create cache: %v", err))
+		panic(fmt.Sprintf("failed to create redis client: %v", err))
 	}
+	cache := cache.NewCacheClient(redisClient)
 	// Create services
 	permService := permissions_service.NewPermissionService(store, ctx, l, permStorage)
 	roleService := role_service.NewRoleService(store, ctx, l, roleStorage)
