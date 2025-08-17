@@ -10,7 +10,7 @@ import (
 )
 
 func StartConsumer(ctx context.Context) error {
-	err := queue.QueueFactory.StartConsumers(ctx)
+	err := queue.StartConsumers(ctx)
 	if err != nil {
 		return err
 	}
@@ -21,7 +21,7 @@ func StartConsumer(ctx context.Context) error {
 }
 
 func StopConsumer() error {
-	return queue.QueueFactory.Close()
+	return queue.Close()
 }
 
 var counter int32
