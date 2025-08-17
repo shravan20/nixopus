@@ -1,14 +1,42 @@
 package queue
 
 import (
-	"github.com/go-redis/redis/v8"
+	"context"
+
+	"github.com/redis/go-redis/v9"
+	"github.com/vmihailenco/taskq/v3"
 	"github.com/vmihailenco/taskq/v3/redisq"
 )
 
-var Redis = redis.NewClient(&redis.Options{
-	Addr:         ":6379", // TODO: THIS CAN FROM THE ENV or Config
-	MinIdleConns: 10,
-})
+var (
+	redisClient  *redis.Client
+	factory      taskq.Factory
+)
 
-var QueueFactory = redisq.NewFactory()
+// Init initializes the queue factory with a shared Redis v9 client.
+func Init(client *redis.Client) {
+	redisClient = client
+	factory = redisq.NewFactory()
+}
+
+// RegisterQueue registers a new queue with the shared redis client.
+func RegisterQueue(opts *taskq.QueueOptions) taskq.Queue {
+	if opts.Redis == nil {
+		opts.Redis = redisClient
+	}
+	return factory.RegisterQueue(opts)
+}
+
+func StartConsumers(ctx context.Context) error {
+	return factory.StartConsumers(ctx)
+}
+
+func Close() error {
+	return factory.Close()
+}
+
+// RedisClient returns the shared redis client used by the queue package.
+func RedisClient() *redis.Client {
+	return redisClient
+}
 
