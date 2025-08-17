@@ -1,9 +1,11 @@
-package consumer
+package main
 
 import (
 	"context"
 	"flag"
 	"log"
+
+	"github.com/raghavyuva/nixopus-api/internal/queue"
 )
 
 func main() {
@@ -11,17 +13,17 @@ func main() {
 
 	c := context.Background()
 
-	err := QueueFactory.StartConsumers(c)
+	err := queue.QueueFactory.StartConsumers(c)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	go LogStats()
+	go queue.LogStats()
 
-	sig := WaitSignal()
+	sig := queue.WaitSignal()
 	log.Println(sig.String())
 
-	err = QueueFactory.Close()
+	err = queue.QueueFactory.Close()
 	if err != nil {
 		log.Fatal(err)
 	}

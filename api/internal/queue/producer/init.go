@@ -1,26 +1,28 @@
-package producer
+package main
 
 import (
 	"context"
 	"flag"
 	"log"
+
+	"github.com/raghavyuva/nixopus-api/internal/queue"
 )
 
 func main() {
 	flag.Parse()
 
-	go LogStats()
+	go queue.LogStats()
 
 	go func() {
 		for {
-			err := MainQueue.Add(CountTask.WithArgs(context.Background()))
+			err := queue.MainQueue.Add(queue.CountTask.WithArgs(context.Background()))
 			if err != nil {
 				log.Fatal(err)
 			}
-			IncrLocalCounter()
+			queue.IncrLocalCounter()
 		}
 	}()
 
-	sig := WaitSignal()
+	sig := queue.WaitSignal()
 	log.Println(sig.String())
 }
