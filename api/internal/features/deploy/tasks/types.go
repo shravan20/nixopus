@@ -57,20 +57,3 @@ func NewTaskService(storage storage.DeployRepository, logger logger.Logger, dock
 		Github_service: githubService,
 	}
 }
-
-// // TODO:
-// Click Create Deploy =>
-// 1. Data validated
-// 2. Prepare the context/data
-// 3. Validate data/contextcon4teCteate a tasktext
-// 4. Create a task; push this Queue
-// 5. return response
-
-// Worker flow:
-// 5. Worker pckups up message
-// 	0. Prepare data required all steps x=[]
-// 	1. x=[]
-// 	2. building the application
-// 	3. deploying the application
-// 	4. setting up the proxy
-// 	5. cleaning up the resources

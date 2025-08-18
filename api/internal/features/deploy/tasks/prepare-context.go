@@ -1,21 +1,37 @@
-package createdeployment
+package tasks
 
 import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raghavyuva/nixopus-api/internal/features/deploy/tasks"
 	"github.com/raghavyuva/nixopus-api/internal/features/deploy/types"
 	"github.com/raghavyuva/nixopus-api/internal/features/logger"
 	shared_types "github.com/raghavyuva/nixopus-api/internal/types"
 )
+
+type PrepareContextTask struct {
+	TaskService        *TaskService
+	PrepareContextConfig PrepareContextConfig
+	UserId             uuid.UUID
+	OrganizationId     uuid.UUID
+}
+
+type PrepareContextConfig struct {
+	Deployment       *types.CreateDeploymentRequest
+	ContextPath      string
+}
+
+type PrepareContextResult struct {
+	Application           shared_types.Application
+	ApplicationDeployment shared_types.ApplicationDeployment
+}
 
 // GetApplicationData creates an application from a CreateDeploymentRequest
 // and a user ID. It populates the application's fields with the corresponding
 // values from the request, and sets the CreatedAt and UpdatedAt fields to the
 // current time.
 // It returns the application data.
-func (c *CreateDeploymentTask) GetApplicationData(
+func (c *PrepareContextTask) GetApplicationData(
 	deployment *types.CreateDeploymentRequest,
 	createdAt *time.Time,
 ) shared_types.Application {
@@ -28,8 +44,8 @@ func (c *CreateDeploymentTask) GetApplicationData(
 	application := shared_types.Application{
 		ID:                   uuid.New(),
 		Name:                 deployment.Name,
-		BuildVariables:       tasks.GetStringFromMap(deployment.BuildVariables),
-		EnvironmentVariables: tasks.GetStringFromMap(deployment.EnvironmentVariables),
+		BuildVariables:       GetStringFromMap(deployment.BuildVariables),
+		EnvironmentVariables: GetStringFromMap(deployment.EnvironmentVariables),
 		Environment:          deployment.Environment,
 		BuildPack:            deployment.BuildPack,
 		Repository:           deployment.Repository,
@@ -53,7 +69,7 @@ func (c *CreateDeploymentTask) GetApplicationData(
 // It sets the CreatedAt and UpdatedAt fields with the current time and returns
 // the created ApplicationDeployment.
 // It returns the created ApplicationDeployment.
-func (c *CreateDeploymentTask) GetDeploymentConfig(application shared_types.Application) shared_types.ApplicationDeployment {
+func (c *PrepareContextTask) GetDeploymentConfig(application shared_types.Application) shared_types.ApplicationDeployment {
 	applicationDeployment := shared_types.ApplicationDeployment{
 		ID:              uuid.New(),
 		ApplicationID:   application.ID,
@@ -67,11 +83,11 @@ func (c *CreateDeploymentTask) GetDeploymentConfig(application shared_types.Appl
 	}
 
 	return applicationDeployment
-}
+}	
 
 // PersistApplicationDeploymentData persists the application and application deployment data to the database.
 // It returns an error if the operation fails.
-func (c *CreateDeploymentTask) PersistApplicationDeploymentData(application shared_types.Application, applicationDeployment shared_types.ApplicationDeployment) error {
+func (c *PrepareContextTask) PersistApplicationDeploymentData(application shared_types.Application, applicationDeployment shared_types.ApplicationDeployment) error {
 	operations := []struct {
 		operation  func() error
 		errMessage string
@@ -104,7 +120,7 @@ func (c *CreateDeploymentTask) PersistApplicationDeploymentData(application shar
 // The second parameter is an error message prefix that is used when logging the error.
 // If the operation fails, it logs the error message and returns the error.
 // Otherwise, it returns nil.
-func (c *CreateDeploymentTask) executeDBOperations(fn func() error, errMessage string) error {
+func (c *PrepareContextTask) executeDBOperations(fn func() error, errMessage string) error {
 	err := fn()
 	if err != nil {
 		c.TaskService.Logger.Log(logger.Error, errMessage+err.Error(), "")
@@ -115,9 +131,9 @@ func (c *CreateDeploymentTask) executeDBOperations(fn func() error, errMessage s
 
 // PrepareContext prepares the context for the deployment.
 // It returns an error if the operation fails.
-func (c *CreateDeploymentTask) PrepareContext() (PrepareContextResult, error) {
+func (c *PrepareContextTask) PrepareContext() (PrepareContextResult, error) {
 	now := time.Now()
-	application := c.GetApplicationData(c.CreateDeployConfig.Deployment, &now)
+	application := c.GetApplicationData(c.PrepareContextConfig.Deployment, &now)
 	applicationDeployment := c.GetDeploymentConfig(application)
 	err := c.PersistApplicationDeploymentData(application, applicationDeployment)
 	if err != nil {
