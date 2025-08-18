@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"log"
 	"net/http"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/raghavyuva/nixopus-api/internal/redisclient"
 	"github.com/raghavyuva/nixopus-api/internal/storage"
 	"github.com/raghavyuva/nixopus-api/internal/types"
+	"github.com/vmihailenco/taskq/v3"
 )
 
 func main() {
@@ -30,6 +32,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to create redis client for queue due to %v", err)
 	}
+	taskq.SetLogger(log.New(io.Discard, "", 0))
 	queue.Init(redisClient)
 
 	// boot independent queues and their tasks before starting consumers

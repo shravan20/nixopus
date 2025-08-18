@@ -5,10 +5,11 @@ import (
 	"strconv"
 
 	github_service "github.com/raghavyuva/nixopus-api/internal/features/github-connector/service"
+	shared_types "github.com/raghavyuva/nixopus-api/internal/types"
 )
 
 type CloneConfig struct {
-	PrepareContextResult
+	shared_types.PrepareContextResult
 	DeploymentType string
 }
 

@@ -21,11 +21,6 @@ type PrepareContextConfig struct {
 	ContextPath      string
 }
 
-type PrepareContextResult struct {
-	Application           shared_types.Application
-	ApplicationDeployment shared_types.ApplicationDeployment
-}
-
 // GetApplicationData creates an application from a CreateDeploymentRequest
 // and a user ID. It populates the application's fields with the corresponding
 // values from the request, and sets the CreatedAt and UpdatedAt fields to the
@@ -131,16 +126,16 @@ func (c *PrepareContextTask) executeDBOperations(fn func() error, errMessage str
 
 // PrepareContext prepares the context for the deployment.
 // It returns an error if the operation fails.
-func (c *PrepareContextTask) PrepareContext() (PrepareContextResult, error) {
+func (c *PrepareContextTask) PrepareContext() (shared_types.PrepareContextResult, error) {
 	now := time.Now()
 	application := c.GetApplicationData(c.PrepareContextConfig.Deployment, &now)
 	applicationDeployment := c.GetDeploymentConfig(application)
 	err := c.PersistApplicationDeploymentData(application, applicationDeployment)
 	if err != nil {
-		return PrepareContextResult{}, err
+		return shared_types.PrepareContextResult{}, err
 	}
 
-	return PrepareContextResult{
+	return shared_types.PrepareContextResult{
 		Application:           application,
 		ApplicationDeployment: applicationDeployment,
 	}, nil

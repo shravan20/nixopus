@@ -20,7 +20,7 @@ import (
 )
 
 type BuildConfig struct {
-	PrepareContextResult
+	shared_types.PrepareContextResult
 	ContextPath       string
 	Force             bool
 	ForceWithoutCache bool

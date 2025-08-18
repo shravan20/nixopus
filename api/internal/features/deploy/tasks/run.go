@@ -12,6 +12,7 @@ import (
 	"github.com/raghavyuva/nixopus-api/internal/features/deploy/types"
 	"github.com/raghavyuva/nixopus-api/internal/features/logger"
 	"github.com/raghavyuva/nixopus-api/internal/features/ssh"
+	shared_types "github.com/raghavyuva/nixopus-api/internal/types"
 )
 
 type AtomicUpdateContainerResult struct {
@@ -125,7 +126,7 @@ func (s *TaskService) prepareNetworkConfig() network.NetworkingConfig {
 	}
 }
 
-func (s *TaskService) getRunningContainers(r PrepareContextResult) ([]container.Summary, error) {
+func (s *TaskService) getRunningContainers(r shared_types.PrepareContextResult) ([]container.Summary, error) {
 	all_containers, err := s.DockerRepo.ListAllContainers()
 	if err != nil {
 		return nil, types.ErrFailedToListContainers
@@ -142,7 +143,7 @@ func (s *TaskService) getRunningContainers(r PrepareContextResult) ([]container.
 	return currentContainers, nil
 }
 
-func (s *TaskService) createContainerConfigs(r PrepareContextResult) (container.Config, container.HostConfig, network.NetworkingConfig, string) {
+func (s *TaskService) createContainerConfigs(r shared_types.PrepareContextResult) (container.Config, container.HostConfig, network.NetworkingConfig, string) {
 	port_str := fmt.Sprintf("%d", r.Application.Port)
 	port, _ := nat.NewPort("tcp", port_str)
 
@@ -173,7 +174,7 @@ func (s *TaskService) createContainerConfigs(r PrepareContextResult) (container.
 }
 
 // AtomicUpdateContainer performs a zero-downtime update of a running container
-func (s *TaskService) AtomicUpdateContainer(r PrepareContextResult) (AtomicUpdateContainerResult, error) {
+func (s *TaskService) AtomicUpdateContainer(r shared_types.PrepareContextResult) (AtomicUpdateContainerResult, error) {
 	if r.Application.Name == "" {
 		return AtomicUpdateContainerResult{}, types.ErrMissingImageName
 	}
