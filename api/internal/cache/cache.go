@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
+	"github.com/raghavyuva/nixopus-api/internal/redisclient"
 	"github.com/raghavyuva/nixopus-api/internal/types"
 )
 
@@ -34,8 +35,12 @@ type CacheRepository interface {
 	InvalidateFeatureFlag(ctx context.Context, orgID, featureName string) error
 }
 
-func NewCacheClient(client *redis.Client) *Cache {
-	return &Cache{client: client}
+func NewCache(redisURL string) (*Cache, error) {
+	client, err := redisclient.New(redisURL)
+	if err != nil {
+		return nil, err
+	}
+	return &Cache{client: client}, nil
 }
 
 func (c *Cache) GetUser(ctx context.Context, email string) (*types.User, error) {
