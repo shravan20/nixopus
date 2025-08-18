@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-fuego/fuego"
 	"github.com/google/uuid"
-	createdeployment "github.com/raghavyuva/nixopus-api/internal/features/deploy/tasks/create-deployment"
 	"github.com/raghavyuva/nixopus-api/internal/features/deploy/types"
 	"github.com/raghavyuva/nixopus-api/internal/features/logger"
 	shared_types "github.com/raghavyuva/nixopus-api/internal/types"
@@ -52,20 +51,9 @@ func (c *DeployController) HandleDeploy(f fuego.ContextWithBody[types.CreateDepl
 		}
 	}
 
-	c.logger.Log(logger.Info, "attempting to create deployment", "name: "+data.Name+", user_id: "+user.ID.String())
+	c.logger.Log(logger.Info, "attempting to create deployment", "name: "+data.Name+", user_id: "+user.ID.String())	
 
-	createDeploymentTask := createdeployment.CreateDeploymentTask{
-		TaskService: c.taskService,
-		CreateDeployConfig: createdeployment.CreateDeployConfig{
-			Deployment:       &data,
-			ContextPath:      "",
-			DeploymentConfig: nil,
-		},
-		UserId:         user.ID,
-		OrganizationId: organizationID,
-	}
-
-	err = createDeploymentTask.Execute(&data, user.ID, organizationID)
+	err = c.taskService.CreateDeploymentTask(&data, user.ID, organizationID)
 	if err != nil {
 		c.logger.Log(logger.Error, "failed to create deployment", "name: "+data.Name+", error: "+err.Error())
 		return nil, fuego.HTTPError{
