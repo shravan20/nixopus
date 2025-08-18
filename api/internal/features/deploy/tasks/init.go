@@ -1,10 +1,9 @@
 package tasks
 
 import (
-	"encoding/json"
-
 	"github.com/google/uuid"
 	"github.com/raghavyuva/nixopus-api/internal/features/deploy/types"
+	shared_types "github.com/raghavyuva/nixopus-api/internal/types"
 )
 
 func (t *TaskService) CreateDeploymentTask(deployment *types.CreateDeploymentRequest, userID uuid.UUID, organizationID uuid.UUID) error {
@@ -22,6 +21,27 @@ func (t *TaskService) CreateDeploymentTask(deployment *types.CreateDeploymentReq
 		return err
 	}
 
-	_, _ = json.MarshalIndent(prepareContextResult, "", "  ")
+	repoPath, err := t.Clone(CloneConfig{
+		PrepareContextResult: prepareContextResult,
+		DeploymentType:       string(shared_types.DeploymentTypeCreate),
+	})
+
+	if err != nil {
+		return err
+	}
+
+	_, err = t.BuildImage(BuildConfig{
+		PrepareContextResult: prepareContextResult,
+		ContextPath:          repoPath,
+		Force:                false,
+		ForceWithoutCache:    false,
+	})
+
+	_, err = t.AtomicUpdateContainer(prepareContextResult)
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
