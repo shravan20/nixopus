@@ -8,8 +8,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/redis/go-redis/extra/redisrate"
-	"github.com/redis/go-redis/v9"
+	redisv8 "github.com/go-redis/redis/v8"
+	redisrate "github.com/go-redis/redis_rate/v9"
 	"github.com/raghavyuva/nixopus-api/internal/queue"
 	"github.com/vmihailenco/taskq/v3"
 )
@@ -30,7 +30,7 @@ var CreateDeploymentQueue = queue.RegisterQueue(&taskq.QueueOptions{
 		Burst:  100,
 		Period: 1 * time.Second,
 	},
-	RateLimiter: redisrate.NewLimiter(redis.NewClient(&redis.Options{Addr: ":6379"})),
+	RateLimiter: redisrate.NewLimiter(redisv8.NewClient(&redisv8.Options{Addr: ":6379"})),
 })
 
 var Task1 = taskq.RegisterTask(&taskq.TaskOptions{
@@ -60,8 +60,8 @@ func WaitSignal() os.Signal {
 func main() {
 	ctx := context.Background()
 
-	// Initialize queue with a shared client for this example.
-	client := redis.NewClient(&redis.Options{Addr: ":6379"})
+	// Initialize queue with a shared v8 client for taskq compatibility
+	client := redisv8.NewClient(&redisv8.Options{Addr: ":6379"})
 	queue.Init(client)
 
 	pong, err := client.Ping(ctx).Result()

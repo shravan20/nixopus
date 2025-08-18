@@ -3,10 +3,10 @@ package redisclient
 import (
 	"time"
 
-	"github.com/redis/go-redis/v9"
+	"github.com/go-redis/redis/v8"
 )
 
-// New creates a new Redis v9 client from a redis URL (e.g. redis://localhost:6379).
+// New creates a new Redis v8 client from a redis URL (e.g. redis://localhost:6379).
 func New(redisURL string) (*redis.Client, error) {
 	opt, err := redis.ParseURL(redisURL)
 	if err != nil {

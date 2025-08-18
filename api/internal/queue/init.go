@@ -3,17 +3,18 @@ package queue
 import (
 	"context"
 
-	"github.com/redis/go-redis/v9"
+	"github.com/go-redis/redis/v8"
+
 	"github.com/vmihailenco/taskq/v3"
 	"github.com/vmihailenco/taskq/v3/redisq"
 )
 
 var (
-	redisClient  *redis.Client
-	factory      taskq.Factory
+	redisClient *redis.Client
+	factory     taskq.Factory
 )
 
-// Init initializes the queue factory with a shared Redis v9 client.
+// Init initializes the queue factory with a shared Redis v8 client.
 func Init(client *redis.Client) {
 	redisClient = client
 	factory = redisq.NewFactory()
@@ -33,10 +34,5 @@ func StartConsumers(ctx context.Context) error {
 
 func Close() error {
 	return factory.Close()
-}
-
-// RedisClient returns the shared redis client used by the queue package.
-func RedisClient() *redis.Client {
-	return redisClient
 }
 
