@@ -12,9 +12,7 @@ import (
 func (t *TaskService) CreateDeploymentTask(deployment *types.CreateDeploymentRequest, userID uuid.UUID, organizationID uuid.UUID) (shared_types.Application, error) {
 	contextTask := ContextTask{
 		TaskService: t,
-		ContextConfig: ContextConfig{
-			Deployment: deployment,
-		},
+		ContextConfig: deployment,
 		UserId:         userID,
 		OrganizationId: organizationID,
 	}

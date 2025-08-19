@@ -17,7 +17,11 @@ import (
 
 // CreateDeployment creates a new application deployment in the database
 // and starts the deployment process in a separate goroutine.
+//
+// Deprecated: This method is deprecated and will be removed in a future version.
+// Use TaskService.CreateDeploymentTask instead for better queue-based deployment handling.
 func (s *DeployService) CreateDeployment(deployment *types.CreateDeploymentRequest, userID uuid.UUID, organizationID uuid.UUID) (shared_types.Application, error) {
+	// TODO: Remove this method in next major version
 	application := createApplicationFromDeploymentRequest(deployment, userID, organizationID, nil)
 
 	deploy_config, err := s.prepareDeploymentConfig(application, userID, shared_types.DeploymentTypeCreate, false, false)
@@ -32,6 +36,9 @@ func (s *DeployService) CreateDeployment(deployment *types.CreateDeploymentReque
 
 // UpdateDeployment updates an existing application deployment
 // in the database and starts the deployment process in a separate goroutine.
+//
+// Deprecated: This method is deprecated and will be removed in a future version.
+// Use TaskService.UpdateDeployment instead for better queue-based deployment handling.
 func (s *DeployService) UpdateDeployment(deployment *types.UpdateDeploymentRequest, userID uuid.UUID, organizationID uuid.UUID) (shared_types.Application, error) {
 	application, err := s.storage.GetApplicationById(deployment.ID.String(), organizationID)
 	if err != nil {
@@ -136,6 +143,12 @@ func (s *DeployService) GetDeploymentById(deploymentID string) (shared_types.App
 	return s.storage.GetApplicationDeploymentById(deploymentID)
 }
 
+// DeleteDeployment deletes a deployment and its associated resources.
+// It stops and removes the container, image, and repository.
+// It returns an error if any operation fails.
+//
+// Deprecated: This method is deprecated and will be removed in a future version.
+// Use TaskService.DeleteDeployment instead for better queue-based deployment handling.
 func (s *DeployService) DeleteDeployment(deployment *types.DeleteDeploymentRequest, userID uuid.UUID, organizationID uuid.UUID) error {
 	application, err := s.storage.GetApplicationById(deployment.ID.String(), organizationID)
 	if err != nil {
@@ -226,7 +239,7 @@ func (s *DeployService) RestartDeployment(deployment *types.RestartDeploymentReq
 }
 
 func (s *DeployService) prepareDeploymentConfig(application shared_types.Application, userID uuid.UUID, deploymentType shared_types.DeploymentType, force, forceWithoutCache bool) (DeployerConfig, error) {
-	
+
 	deployRequest, deployStatus, deployment_config, err := s.createAndPrepareDeployment(application, shared_types.DeploymentRequestConfig{
 		Type:              deploymentType,
 		Force:             force,
