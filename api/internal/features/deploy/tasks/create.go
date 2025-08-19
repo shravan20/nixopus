@@ -10,16 +10,16 @@ import (
 )
 
 func (t *TaskService) CreateDeploymentTask(deployment *types.CreateDeploymentRequest, userID uuid.UUID, organizationID uuid.UUID) (shared_types.Application, error) {
-	prepareContextTask := PrepareContextTask{
+	contextTask := ContextTask{
 		TaskService: t,
-		PrepareContextConfig: PrepareContextConfig{
+		ContextConfig: ContextConfig{
 			Deployment: deployment,
 		},
 		UserId:         userID,
 		OrganizationId: organizationID,
 	}
 
-	TaskPayload, err := prepareContextTask.PrepareContext()
+	TaskPayload, err := contextTask.PrepareContext()
 	if err != nil {
 		return shared_types.Application{}, err
 	}

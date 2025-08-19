@@ -9,14 +9,14 @@ import (
 	shared_types "github.com/raghavyuva/nixopus-api/internal/types"
 )
 
-type PrepareContextTask struct {
-	TaskService          *TaskService
-	PrepareContextConfig PrepareContextConfig
-	UserId               uuid.UUID
-	OrganizationId       uuid.UUID
+type ContextTask struct {
+	TaskService    *TaskService
+	ContextConfig  ContextConfig
+	UserId         uuid.UUID
+	OrganizationId uuid.UUID
 }
 
-type PrepareContextConfig struct {
+type ContextConfig struct {
 	Deployment  *types.CreateDeploymentRequest
 	ContextPath string
 }
@@ -26,7 +26,7 @@ type PrepareContextConfig struct {
 // values from the request, and sets the CreatedAt and UpdatedAt fields to the
 // current time.
 // It returns the application data.
-func (c *PrepareContextTask) GetApplicationData(
+func (c *ContextTask) GetApplicationData(
 	deployment *types.CreateDeploymentRequest,
 	createdAt *time.Time,
 ) shared_types.Application {
@@ -64,7 +64,7 @@ func (c *PrepareContextTask) GetApplicationData(
 // It sets the CreatedAt and UpdatedAt fields with the current time and returns
 // the created ApplicationDeployment.
 // It returns the created ApplicationDeployment.
-func (c *PrepareContextTask) GetDeploymentConfig(application shared_types.Application) shared_types.ApplicationDeployment {
+func (c *ContextTask) GetDeploymentConfig(application shared_types.Application) shared_types.ApplicationDeployment {
 	applicationDeployment := shared_types.ApplicationDeployment{
 		ID:              uuid.New(),
 		ApplicationID:   application.ID,
@@ -82,7 +82,7 @@ func (c *PrepareContextTask) GetDeploymentConfig(application shared_types.Applic
 
 // PersistApplicationDeploymentData persists the application and application deployment data to the database.
 // It returns an error if the operation fails.
-func (c *PrepareContextTask) PersistApplicationDeploymentData(application shared_types.Application, applicationDeployment shared_types.ApplicationDeployment) error {
+func (c *ContextTask) PersistApplicationDeploymentData(application shared_types.Application, applicationDeployment shared_types.ApplicationDeployment) error {
 	operations := []struct {
 		operation  func() error
 		errMessage string
@@ -112,7 +112,7 @@ func (c *PrepareContextTask) PersistApplicationDeploymentData(application shared
 
 // PersistApplicationDeploymentStatus creates and persists the initial application deployment status.
 // It returns the created status record or an error if the operation fails.
-func (c *PrepareContextTask) PersistApplicationDeploymentStatus(applicationDeployment shared_types.ApplicationDeployment) (*shared_types.ApplicationDeploymentStatus, error) {
+func (c *ContextTask) PersistApplicationDeploymentStatus(applicationDeployment shared_types.ApplicationDeployment) (*shared_types.ApplicationDeploymentStatus, error) {
 	initialStatus := shared_types.ApplicationDeploymentStatus{
 		ID:                      uuid.New(),
 		ApplicationDeploymentID: applicationDeployment.ID,
@@ -133,7 +133,7 @@ func (c *PrepareContextTask) PersistApplicationDeploymentStatus(applicationDeplo
 // The second parameter is an error message prefix that is used when logging the error.
 // If the operation fails, it logs the error message and returns the error.
 // Otherwise, it returns nil.
-func (c *PrepareContextTask) executeDBOperations(fn func() error, errMessage string) error {
+func (c *ContextTask) executeDBOperations(fn func() error, errMessage string) error {
 	err := fn()
 	if err != nil {
 		c.TaskService.Logger.Log(logger.Error, errMessage+err.Error(), "")
@@ -144,9 +144,9 @@ func (c *PrepareContextTask) executeDBOperations(fn func() error, errMessage str
 
 // PrepareContext prepares the context for the deployment.
 // It returns an error if the operation fails.
-func (c *PrepareContextTask) PrepareContext() (shared_types.TaskPayload, error) {
+func (c *ContextTask) PrepareContext() (shared_types.TaskPayload, error) {
 	now := time.Now()
-	application := c.GetApplicationData(c.PrepareContextConfig.Deployment, &now)
+	application := c.GetApplicationData(c.ContextConfig.Deployment, &now)
 	applicationDeployment := c.GetDeploymentConfig(application)
 
 	err := c.PersistApplicationDeploymentData(application, applicationDeployment)
