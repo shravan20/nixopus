@@ -114,10 +114,3 @@ func (t *TaskService) HandleCreateDeployment(ctx context.Context, prepareContext
 
 	return nil
 }
-
-// TODO :
-// PRE RUN POST RUN COMMANDS EXECUTION
-// REVERSE PROXY CONFIGURATION
-// Updating the application deployment data and application data found out during the different stages of the tasks
-// Logger of the tasks (add log function to the task service)
-// Update the statuses during the different stages of the tasks
