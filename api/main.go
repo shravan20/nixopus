@@ -34,16 +34,6 @@ func main() {
 	}
 	taskq.SetLogger(log.New(io.Discard, "", 0))
 	queue.Init(redisClient)
-
-	// boot independent queues and their tasks before starting consumers
-	queue.SetupQueues()
-	go func() {
-		if err := queue.StartConsumers(ctx); err != nil {
-			log.Fatalf("failed to start queue consumers due to %v", err)
-		}
-		log.Println("Queue consumers started")
-	}()
-
 	router := internal.NewRouter(app)
 	router.Routes()
 	log.Printf("Server starting on port %s", config.AppConfig.Port)
