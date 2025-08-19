@@ -32,7 +32,7 @@ func (t *TaskService) CreateDeploymentTask(deployment *types.CreateDeploymentReq
 	return prepareContextResult.Application, nil
 }
 
-func (t *TaskService) HandleCreateDeployment(ctx context.Context, prepareContextResult shared_types.PrepareContextResult) error {
+func (t *TaskService) HandleCreateDockerfileDeployment(ctx context.Context, prepareContextResult shared_types.PrepareContextResult) error {
 	taskCtx := t.NewTaskContext(prepareContextResult)
 
 	taskCtx.LogAndUpdateStatus("Starting deployment process", shared_types.Cloning)
@@ -74,4 +74,14 @@ func (t *TaskService) HandleCreateDeployment(ctx context.Context, prepareContext
 	taskCtx.LogAndUpdateStatus("Deployment completed successfully", shared_types.Deployed)
 
 	return nil
-}	
+}
+
+// TODO : Implement the docker compose deployment
+func (t *TaskService) HandleCreateDockerComposeDeployment(ctx context.Context, prepareContextResult shared_types.PrepareContextResult) error {
+	return nil
+}
+
+// TODO : Implement the static deployment
+func (t *TaskService) HandleCreateStaticDeployment(ctx context.Context, prepareContextResult shared_types.PrepareContextResult) error {
+	return nil
+}
