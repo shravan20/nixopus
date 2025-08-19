@@ -38,7 +38,7 @@ type TaskContext struct {
 	statusID      uuid.UUID
 }
 
-func (s *TaskService) NewTaskContext(result shared_types.PrepareContextResult) *TaskContext {
+func (s *TaskService) NewTaskContext(result shared_types.TaskPayload) *TaskContext {
 	var statusID uuid.UUID
 	if result.Status != nil {
 		statusID = result.Status.ID

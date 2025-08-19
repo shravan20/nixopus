@@ -9,7 +9,7 @@ import (
 )
 
 type CloneConfig struct {
-	shared_types.PrepareContextResult
+	shared_types.TaskPayload
 	DeploymentType string
 	TaskContext    *TaskContext
 }

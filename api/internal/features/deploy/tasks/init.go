@@ -37,7 +37,7 @@ func (t *TaskService) SetupCreateDeploymentQueue() {
 
 		TaskCreateDeployment = taskq.RegisterTask(&taskq.TaskOptions{
 			Name: TASK_CREATE_DEPLOYMENT,
-			Handler: func(ctx context.Context, data shared_types.PrepareContextResult) error {
+			Handler: func(ctx context.Context, data shared_types.TaskPayload) error {
 				err := t.BuildPack(ctx, data)
 				if err != nil {
 					return err
@@ -52,7 +52,7 @@ func (t *TaskService) StartConsumers(ctx context.Context) error {
 	return queue.StartConsumers(ctx)
 }
 
-func (t *TaskService) BuildPack(ctx context.Context, d shared_types.PrepareContextResult) error {
+func (t *TaskService) BuildPack(ctx context.Context, d shared_types.TaskPayload) error {
 	var err error
 	switch d.Application.BuildPack {
 	case shared_types.DockerFile:

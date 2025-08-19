@@ -1,6 +1,6 @@
 package types
 
-type PrepareContextResult struct {
+type TaskPayload struct {
 	Application           Application
 	ApplicationDeployment ApplicationDeployment
 	Status                *ApplicationDeploymentStatus

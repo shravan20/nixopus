@@ -127,7 +127,7 @@ func (s *TaskService) prepareNetworkConfig() network.NetworkingConfig {
 	}
 }
 
-func (s *TaskService) getRunningContainers(r shared_types.PrepareContextResult, taskContext *TaskContext) ([]container.Summary, error) {
+func (s *TaskService) getRunningContainers(r shared_types.TaskPayload, taskContext *TaskContext) ([]container.Summary, error) {
 	all_containers, err := s.DockerRepo.ListAllContainers()
 	if err != nil {
 		return nil, types.ErrFailedToListContainers
@@ -144,7 +144,7 @@ func (s *TaskService) getRunningContainers(r shared_types.PrepareContextResult, 
 	return currentContainers, nil
 }
 
-func (s *TaskService) createContainerConfigs(r shared_types.PrepareContextResult, taskContext *TaskContext) (container.Config, container.HostConfig, network.NetworkingConfig, string) {
+func (s *TaskService) createContainerConfigs(r shared_types.TaskPayload, taskContext *TaskContext) (container.Config, container.HostConfig, network.NetworkingConfig, string) {
 	port_str := fmt.Sprintf("%d", r.Application.Port)
 	port, _ := nat.NewPort("tcp", port_str)
 
@@ -177,7 +177,7 @@ func (s *TaskService) createContainerConfigs(r shared_types.PrepareContextResult
 }
 
 // AtomicUpdateContainer performs a zero-downtime update of a running container
-func (s *TaskService) AtomicUpdateContainer(r shared_types.PrepareContextResult, taskContext *TaskContext) (AtomicUpdateContainerResult, error) {
+func (s *TaskService) AtomicUpdateContainer(r shared_types.TaskPayload, taskContext *TaskContext) (AtomicUpdateContainerResult, error) {
 	if r.Application.Name == "" {
 		return AtomicUpdateContainerResult{}, types.ErrMissingImageName
 	}

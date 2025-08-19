@@ -144,23 +144,23 @@ func (c *PrepareContextTask) executeDBOperations(fn func() error, errMessage str
 
 // PrepareContext prepares the context for the deployment.
 // It returns an error if the operation fails.
-func (c *PrepareContextTask) PrepareContext() (shared_types.PrepareContextResult, error) {
+func (c *PrepareContextTask) PrepareContext() (shared_types.TaskPayload, error) {
 	now := time.Now()
 	application := c.GetApplicationData(c.PrepareContextConfig.Deployment, &now)
 	applicationDeployment := c.GetDeploymentConfig(application)
 
 	err := c.PersistApplicationDeploymentData(application, applicationDeployment)
 	if err != nil {
-		return shared_types.PrepareContextResult{}, err
+		return shared_types.TaskPayload{}, err
 	}
 
 	// Create initial deployment status
 	initialStatus, err := c.PersistApplicationDeploymentStatus(applicationDeployment)
 	if err != nil {
-		return shared_types.PrepareContextResult{}, err
+		return shared_types.TaskPayload{}, err
 	}
 
-	return shared_types.PrepareContextResult{
+	return shared_types.TaskPayload{
 		Application:           application,
 		ApplicationDeployment: applicationDeployment,
 		Status:                initialStatus,
