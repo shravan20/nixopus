@@ -29,24 +29,24 @@ func (t *TaskService) SetupCreateDeploymentQueue() {
 			ConsumerIdleTimeout: 10 * time.Minute,
 			MinNumWorker:        1,
 			MaxNumWorker:        10,
-			MaxNumFetcher:       5,
-			ReservationSize:     10,
-			ReservationTimeout:  10 * time.Second,
-			WaitTimeout:         10 * time.Second,
-			BufferSize:          100,
+			// MaxNumFetcher:       5,
+			ReservationSize:    10,
+			ReservationTimeout: 10 * time.Second,
+			WaitTimeout:        5 * time.Second,
+			BufferSize:         100,
 		})
 
+		// Task for Create Deployment queue name
+		TaskCreateDeployment = taskq.RegisterTask(&taskq.TaskOptions{
+			Name: "task_create_deployment",
+			Handler: func(ctx context.Context, data shared_types.PrepareContextResult) error {
+				fmt.Printf("handler called : %+v\n", data)
+				t.HandleCreateDeployment(ctx, data)
+				return nil
+			},
+		})
 	})
-	// Task for Create Deployment queue name
 
-	TaskCreateDeployment = taskq.RegisterTask(&taskq.TaskOptions{
-		Name: "task_create_deployment",
-		Handler: func(ctx context.Context, data shared_types.PrepareContextResult) error {
-			fmt.Printf("handler called : %+v\n", data)
-			t.HandleCreateDeployment(ctx, data)
-			return nil
-		},
-	})
 }
 
 func (t *TaskService) StartConsumers(ctx context.Context) error {
