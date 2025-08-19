@@ -2,6 +2,7 @@ package tasks
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -15,11 +16,15 @@ var (
 	onceQueues            sync.Once
 	CreateDeploymentQueue taskq.Queue
 	TaskCreateDeployment  *taskq.Task
+	UpdateDeploymentQueue taskq.Queue
+	TaskUpdateDeployment  *taskq.Task
 )
 
 var (
 	TASK_CREATE_DEPLOYMENT  = "task_create_deployment"
 	QUEUE_CREATE_DEPLOYMENT = "create-deployment"
+	QUEUE_UPDATE_DEPLOYMENT = "update-deployment"
+	TASK_UPDATE_DEPLOYMENT  = "task_update_deployment"
 )
 
 func (t *TaskService) SetupCreateDeploymentQueue() {
@@ -39,6 +44,29 @@ func (t *TaskService) SetupCreateDeploymentQueue() {
 			Name: TASK_CREATE_DEPLOYMENT,
 			Handler: func(ctx context.Context, data shared_types.TaskPayload) error {
 				err := t.BuildPack(ctx, data)
+				if err != nil {
+					return err
+				}
+				return nil
+			},
+		})
+
+		UpdateDeploymentQueue = queue.RegisterQueue(&taskq.QueueOptions{
+			Name:                QUEUE_UPDATE_DEPLOYMENT,
+			ConsumerIdleTimeout: 10 * time.Minute,
+			MinNumWorker:        1,
+			MaxNumWorker:        10,
+			ReservationSize:     10,
+			ReservationTimeout:  10 * time.Second,
+			WaitTimeout:         5 * time.Second,
+			BufferSize:          100,
+		})
+
+		TaskUpdateDeployment = taskq.RegisterTask(&taskq.TaskOptions{
+			Name: TASK_UPDATE_DEPLOYMENT,
+			Handler: func(ctx context.Context, data shared_types.TaskPayload) error {
+				fmt.Println("Updating deployment")
+				err := t.HandleUpdateDeployment(ctx, data)
 				if err != nil {
 					return err
 				}

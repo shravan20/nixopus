@@ -19,7 +19,7 @@ func (t *TaskService) CreateDeploymentTask(deployment *types.CreateDeploymentReq
 		OrganizationId: organizationID,
 	}
 
-	TaskPayload, err := contextTask.PrepareContext()
+	TaskPayload, err := contextTask.PrepareCreateDeploymentContext()
 	if err != nil {
 		return shared_types.Application{}, err
 	}
@@ -84,4 +84,33 @@ func (t *TaskService) HandleCreateDockerComposeDeployment(ctx context.Context, T
 // TODO : Implement the static deployment
 func (t *TaskService) HandleCreateStaticDeployment(ctx context.Context, TaskPayload shared_types.TaskPayload) error {
 	return nil
+}
+
+// TODOD: Shravan implement types and get back
+func (t *TaskService) ReDeployApplication(ctx context.Context, request *types.ReDeployApplicationRequest, userID uuid.UUID, organizationID uuid.UUID) (shared_types.Application, error) {
+
+	contextTask := ContextTask{
+		TaskService:    t,
+		ContextConfig:  request,
+		UserId:         userID,
+		OrganizationId: organizationID,
+	}
+
+	// Prepare the context for re-deployment
+	// deployment_details from db
+	// application_details from db
+	// deploy_status
+	// db call to update status
+	// prepareDeploymentConfig (app_details, userId, deploymentRestartType.restart, false, false)
+	// createAndPrepareDeployment(application, DeploymentRequestConfig)
+	// deployRequest, deploySTatus, deploymentConfig
+	// push it to Queue
+
+	TaskPayload, err := contextTask.PrepareReDeploymentContext()
+
+	if err != nil {
+		return shared_types.Application{}, err
+	}
+	fmt.Print("Re-deploying application with payload: ", TaskPayload)
+	return shared_types.Application{}, nil
 }

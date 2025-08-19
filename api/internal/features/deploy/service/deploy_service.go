@@ -58,6 +58,7 @@ func (s *DeployService) ReDeployApplication(redeployRequest *types.ReDeployAppli
 	}
 
 	deploy_config, err := s.prepareDeploymentConfig(application, userID, shared_types.DeploymentTypeReDeploy, redeployRequest.Force, redeployRequest.ForceWithoutCache)
+
 	if err != nil {
 		return shared_types.Application{}, err
 	}
@@ -225,6 +226,7 @@ func (s *DeployService) RestartDeployment(deployment *types.RestartDeploymentReq
 }
 
 func (s *DeployService) prepareDeploymentConfig(application shared_types.Application, userID uuid.UUID, deploymentType shared_types.DeploymentType, force, forceWithoutCache bool) (DeployerConfig, error) {
+	
 	deployRequest, deployStatus, deployment_config, err := s.createAndPrepareDeployment(application, shared_types.DeploymentRequestConfig{
 		Type:              deploymentType,
 		Force:             force,

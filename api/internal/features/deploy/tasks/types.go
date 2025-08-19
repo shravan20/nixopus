@@ -8,12 +8,6 @@ import (
 	shared_storage "github.com/raghavyuva/nixopus-api/internal/storage"
 )
 
-type TaskRepository interface {
-	GetTaskName() string
-	GetStatus() string
-	Execute() error
-}
-
 type TaskService struct {
 	Storage        storage.DeployRepository
 	Logger         logger.Logger

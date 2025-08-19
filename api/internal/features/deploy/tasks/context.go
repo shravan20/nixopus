@@ -11,10 +11,16 @@ import (
 
 type ContextTask struct {
 	TaskService    *TaskService
-	ContextConfig  ContextConfig
+	ContextConfig  any
 	UserId         uuid.UUID
 	OrganizationId uuid.UUID
+	Application    *shared_types.Application
 }
+
+const (
+	OperationCreate = "create"
+	OperationUpdate = "update"
+)
 
 type ContextConfig struct {
 	Deployment  *types.CreateDeploymentRequest
@@ -64,10 +70,10 @@ func (c *ContextTask) GetApplicationData(
 // It sets the CreatedAt and UpdatedAt fields with the current time and returns
 // the created ApplicationDeployment.
 // It returns the created ApplicationDeployment.
-func (c *ContextTask) GetDeploymentConfig(application shared_types.Application) shared_types.ApplicationDeployment {
+func (c *ContextTask) GetDeploymentConfig(applicationID uuid.UUID) shared_types.ApplicationDeployment {
 	applicationDeployment := shared_types.ApplicationDeployment{
 		ID:              uuid.New(),
-		ApplicationID:   application.ID,
+		ApplicationID:   applicationID,
 		CommitHash:      "", // Initialize with an empty string
 		CreatedAt:       time.Now(),
 		UpdatedAt:       time.Now(),
@@ -76,13 +82,27 @@ func (c *ContextTask) GetDeploymentConfig(application shared_types.Application) 
 		ContainerImage:  "",
 		ContainerStatus: "",
 	}
-
 	return applicationDeployment
 }
 
 // PersistApplicationDeploymentData persists the application and application deployment data to the database.
+// It takes the operations to perform and their error messages as parameters.
+// It returns an error if any operation fails.
+func (c *ContextTask) PersistApplicationDeploymentData(operations []struct {
+	operation  func() error
+	errMessage string
+}) error {
+	for _, op := range operations {
+		if err := c.executeDBOperations(op.operation, op.errMessage); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// PersistCreateApplicationDeploymentData persists the application and application deployment data to the database.
 // It returns an error if the operation fails.
-func (c *ContextTask) PersistApplicationDeploymentData(application shared_types.Application, applicationDeployment shared_types.ApplicationDeployment) error {
+func (c *ContextTask) PersistCreateApplicationDeploymentData(application shared_types.Application, applicationDeployment shared_types.ApplicationDeployment) error {
 	operations := []struct {
 		operation  func() error
 		errMessage string
@@ -100,19 +120,33 @@ func (c *ContextTask) PersistApplicationDeploymentData(application shared_types.
 			errMessage: types.LogFailedToCreateApplicationDeployment,
 		},
 	}
+	return c.PersistApplicationDeploymentData(operations)
+}
 
-	for _, op := range operations {
-		if err := c.executeDBOperations(op.operation, op.errMessage); err != nil {
-			return err
-		}
+func (c *ContextTask) PersistUpdateApplicationDeploymentData(application shared_types.Application, applicationDeployment shared_types.ApplicationDeployment) error {
+	operations := []struct {
+		operation  func() error
+		errMessage string
+	}{
+		{
+			operation: func() error {
+				return c.TaskService.Storage.UpdateApplication(&application)
+			},
+			errMessage: types.LogFailedToUpdateApplicationRecord,
+		},
+		{
+			operation: func() error {
+				return c.TaskService.Storage.AddApplicationDeployment(&applicationDeployment)
+			},
+			errMessage: types.LogFailedToUpdateApplicationDeployment,
+		},
 	}
-
-	return nil
+	return c.PersistApplicationDeploymentData(operations)
 }
 
 // PersistApplicationDeploymentStatus creates and persists the initial application deployment status.
 // It returns the created status record or an error if the operation fails.
-func (c *ContextTask) PersistApplicationDeploymentStatus(applicationDeployment shared_types.ApplicationDeployment) (*shared_types.ApplicationDeploymentStatus, error) {
+func (c *ContextTask) PersistCreateDeploymentStatus(applicationDeployment shared_types.ApplicationDeployment) (*shared_types.ApplicationDeploymentStatus, error) {
 	initialStatus := shared_types.ApplicationDeploymentStatus{
 		ID:                      uuid.New(),
 		ApplicationDeploymentID: applicationDeployment.ID,
@@ -142,20 +176,18 @@ func (c *ContextTask) executeDBOperations(fn func() error, errMessage string) er
 	return nil
 }
 
-// PrepareContext prepares the context for the deployment.
+// PrepareCreateDeploymentContext prepares the context for the deployment.
 // It returns an error if the operation fails.
-func (c *ContextTask) PrepareContext() (shared_types.TaskPayload, error) {
+func (c *ContextTask) PrepareCreateDeploymentContext() (shared_types.TaskPayload, error) {
 	now := time.Now()
-	application := c.GetApplicationData(c.ContextConfig.Deployment, &now)
-	applicationDeployment := c.GetDeploymentConfig(application)
-
-	err := c.PersistApplicationDeploymentData(application, applicationDeployment)
+	deployment := c.ContextConfig.(*types.CreateDeploymentRequest)
+	application := c.GetApplicationData(deployment, &now)
+	applicationDeployment := c.GetDeploymentConfig(application.ID)
+	err := c.PersistCreateApplicationDeploymentData(application, applicationDeployment)
 	if err != nil {
 		return shared_types.TaskPayload{}, err
 	}
-
-	// Create initial deployment status
-	initialStatus, err := c.PersistApplicationDeploymentStatus(applicationDeployment)
+	initialStatus, err := c.PersistCreateDeploymentStatus(applicationDeployment)
 	if err != nil {
 		return shared_types.TaskPayload{}, err
 	}
@@ -164,5 +196,81 @@ func (c *ContextTask) PrepareContext() (shared_types.TaskPayload, error) {
 		Application:           application,
 		ApplicationDeployment: applicationDeployment,
 		Status:                initialStatus,
+		UpdateOptions: shared_types.UpdateOptions{
+			Force:             false,
+			ForceWithoutCache: false,
+		},
 	}, nil
+}
+
+func (c *ContextTask) PrepareUpdateDeploymentContext() (shared_types.TaskPayload, error) {
+	application := c.mergeDeploymentUpdates()
+	applicationDeployment := c.GetDeploymentConfig(c.Application.ID)
+	err := c.PersistUpdateApplicationDeploymentData(application, applicationDeployment)
+	if err != nil {
+		return shared_types.TaskPayload{}, err
+	}
+
+	initialStatus, err := c.PersistCreateDeploymentStatus(applicationDeployment)
+	if err != nil {
+		return shared_types.TaskPayload{}, err
+	}
+
+	return shared_types.TaskPayload{
+		Application:           application,
+		ApplicationDeployment: applicationDeployment,
+		Status:                initialStatus,
+		UpdateOptions: shared_types.UpdateOptions{
+			Force:             c.ContextConfig.(*types.UpdateDeploymentRequest).Force,
+			ForceWithoutCache: false, // will be set for force redeploy request for now we will not be using it
+		},
+	}, nil
+}
+
+// mergeDeploymentUpdates merges the updates from the deployment request into the application.
+// It returns the updated application.
+func (c *ContextTask) mergeDeploymentUpdates() shared_types.Application {
+	deployment := c.ContextConfig.(*types.UpdateDeploymentRequest)
+	application := c.Application
+	if deployment.Name != "" {
+		application.Name = deployment.Name
+	}
+
+	if deployment.BuildVariables != nil {
+		application.BuildVariables = GetStringFromMap(deployment.BuildVariables)
+	}
+
+	if deployment.EnvironmentVariables != nil {
+		application.EnvironmentVariables = GetStringFromMap(deployment.EnvironmentVariables)
+	}
+
+	if deployment.PreRunCommand != "" {
+		application.PreRunCommand = deployment.PreRunCommand
+	}
+
+	if deployment.PostRunCommand != "" {
+		application.PostRunCommand = deployment.PostRunCommand
+	}
+
+	if deployment.Port != 0 {
+		application.Port = deployment.Port
+	}
+
+	if deployment.DockerfilePath != "" {
+		application.DockerfilePath = deployment.DockerfilePath
+	} else {
+		application.DockerfilePath = "Dockerfile"
+	}
+
+	if deployment.BasePath != "" {
+		application.BasePath = deployment.BasePath
+	}
+
+	application.UpdatedAt = time.Now()
+
+	return *application
+}
+
+func (c *ContextTask) PrepareReDeploymentContext() (shared_types.TaskPayload, error) {
+	return shared_types.TaskPayload{}, nil
 }
