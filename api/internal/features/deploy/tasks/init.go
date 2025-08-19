@@ -103,7 +103,7 @@ func (t *TaskService) HandleCreateDeployment(ctx context.Context, prepareContext
 	taskCtx.AddLog("Image built successfully: " + buildImageResult + " for application " + prepareContextResult.Application.Name)
 	taskCtx.UpdateStatus(shared_types.Deploying)
 
-	containerResult, err := t.AtomicUpdateContainer(prepareContextResult)
+	containerResult, err := t.AtomicUpdateContainer(prepareContextResult, taskCtx)
 	if err != nil {
 		taskCtx.LogAndUpdateStatus("Failed to update container: "+err.Error(), shared_types.Failed)
 		return err

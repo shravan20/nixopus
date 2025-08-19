@@ -39,11 +39,18 @@ type TaskContext struct {
 }
 
 func (s *TaskService) NewTaskContext(result shared_types.PrepareContextResult) *TaskContext {
+	var statusID uuid.UUID
+	if result.Status != nil {
+		statusID = result.Status.ID
+	} else {
+		statusID = uuid.New()
+	}
+
 	return &TaskContext{
 		service:       s,
 		applicationID: result.Application.ID,
 		deploymentID:  result.ApplicationDeployment.ID,
-		statusID:      uuid.New(),
+		statusID:      statusID,
 	}
 }
 

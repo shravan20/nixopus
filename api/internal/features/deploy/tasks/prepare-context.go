@@ -10,15 +10,15 @@ import (
 )
 
 type PrepareContextTask struct {
-	TaskService        *TaskService
+	TaskService          *TaskService
 	PrepareContextConfig PrepareContextConfig
-	UserId             uuid.UUID
-	OrganizationId     uuid.UUID
+	UserId               uuid.UUID
+	OrganizationId       uuid.UUID
 }
 
 type PrepareContextConfig struct {
-	Deployment       *types.CreateDeploymentRequest
-	ContextPath      string
+	Deployment  *types.CreateDeploymentRequest
+	ContextPath string
 }
 
 // GetApplicationData creates an application from a CreateDeploymentRequest
@@ -78,7 +78,7 @@ func (c *PrepareContextTask) GetDeploymentConfig(application shared_types.Applic
 	}
 
 	return applicationDeployment
-}	
+}
 
 // PersistApplicationDeploymentData persists the application and application deployment data to the database.
 // It returns an error if the operation fails.
@@ -110,6 +110,24 @@ func (c *PrepareContextTask) PersistApplicationDeploymentData(application shared
 	return nil
 }
 
+// PersistApplicationDeploymentStatus creates and persists the initial application deployment status.
+// It returns the created status record or an error if the operation fails.
+func (c *PrepareContextTask) PersistApplicationDeploymentStatus(applicationDeployment shared_types.ApplicationDeployment) (*shared_types.ApplicationDeploymentStatus, error) {
+	initialStatus := shared_types.ApplicationDeploymentStatus{
+		ID:                      uuid.New(),
+		ApplicationDeploymentID: applicationDeployment.ID,
+		Status:                  shared_types.Started,
+		UpdatedAt:               time.Now(),
+	}
+
+	err := c.TaskService.Storage.AddApplicationDeploymentStatus(&initialStatus)
+	if err != nil {
+		return nil, err
+	}
+
+	return &initialStatus, nil
+}
+
 // executeDBOperations executes a database operation and logs an error if it fails.
 // The first parameter is a function that performs the database operation.
 // The second parameter is an error message prefix that is used when logging the error.
@@ -130,7 +148,14 @@ func (c *PrepareContextTask) PrepareContext() (shared_types.PrepareContextResult
 	now := time.Now()
 	application := c.GetApplicationData(c.PrepareContextConfig.Deployment, &now)
 	applicationDeployment := c.GetDeploymentConfig(application)
+
 	err := c.PersistApplicationDeploymentData(application, applicationDeployment)
+	if err != nil {
+		return shared_types.PrepareContextResult{}, err
+	}
+
+	// Create initial deployment status
+	initialStatus, err := c.PersistApplicationDeploymentStatus(applicationDeployment)
 	if err != nil {
 		return shared_types.PrepareContextResult{}, err
 	}
@@ -138,5 +163,6 @@ func (c *PrepareContextTask) PrepareContext() (shared_types.PrepareContextResult
 	return shared_types.PrepareContextResult{
 		Application:           application,
 		ApplicationDeployment: applicationDeployment,
+		Status:                initialStatus,
 	}, nil
 }
