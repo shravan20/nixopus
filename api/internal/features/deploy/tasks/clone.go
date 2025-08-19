@@ -32,6 +32,5 @@ func (t *TaskService) Clone(cloneConfig CloneConfig) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to clone repository: %w", err)
 	}
-	fmt.Printf("repoPath: %s\n", repoPath)
 	return repoPath, nil
 }

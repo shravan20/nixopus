@@ -15,15 +15,12 @@ import (
 
 var (
 	onceQueues sync.Once
-	// Queues - Task Pairs
 	CreateDeploymentQueue taskq.Queue
 	TaskCreateDeployment  *taskq.Task
 )
 
-// SetupQueues registers queues-tasks par with redis and starts consumers.
 func (t *TaskService) SetupCreateDeploymentQueue() {
 	onceQueues.Do(func() {
-		// Queue Nanme: Create Deployment
 		CreateDeploymentQueue = queue.RegisterQueue(&taskq.QueueOptions{
 			Name:                "create-deployment",
 			ConsumerIdleTimeout: 10 * time.Minute,
@@ -36,11 +33,9 @@ func (t *TaskService) SetupCreateDeploymentQueue() {
 			BufferSize:         100,
 		})
 
-		// Task for Create Deployment queue name
 		TaskCreateDeployment = taskq.RegisterTask(&taskq.TaskOptions{
 			Name: "task_create_deployment",
 			Handler: func(ctx context.Context, data shared_types.PrepareContextResult) error {
-				fmt.Printf("handler called : %+v\n", data)
 				t.HandleCreateDeployment(ctx, data)
 				return nil
 			},
@@ -53,7 +48,7 @@ func (t *TaskService) StartConsumers(ctx context.Context) error {
 	return queue.StartConsumers(ctx)
 }
 
-func (t *TaskService) CreateDeploymentTask(deployment *types.CreateDeploymentRequest, userID uuid.UUID, organizationID uuid.UUID) error {
+func (t *TaskService) CreateDeploymentTask(deployment *types.CreateDeploymentRequest, userID uuid.UUID, organizationID uuid.UUID) (shared_types.Application, error) {
 	prepareContextTask := PrepareContextTask{
 		TaskService: t,
 		PrepareContextConfig: PrepareContextConfig{
@@ -65,7 +60,7 @@ func (t *TaskService) CreateDeploymentTask(deployment *types.CreateDeploymentReq
 
 	prepareContextResult, err := prepareContextTask.PrepareContext()
 	if err != nil {
-		return err
+		return shared_types.Application{}, err
 	}
 
 	err = CreateDeploymentQueue.Add(TaskCreateDeployment.WithArgs(context.Background(), prepareContextResult))
@@ -73,16 +68,14 @@ func (t *TaskService) CreateDeploymentTask(deployment *types.CreateDeploymentReq
 		fmt.Printf("error enqueuing create deployment: %v\n", err)
 	}
 
-	return nil
+	return prepareContextResult.Application, nil
 }
 
 func (t *TaskService) HandleCreateDeployment(ctx context.Context, prepareContextResult shared_types.PrepareContextResult) error {
-	fmt.Printf("prepareContextResult: %+v\n", prepareContextResult)
 	repoPath, err := t.Clone(CloneConfig{
 		PrepareContextResult: prepareContextResult,
 		DeploymentType:       string(shared_types.DeploymentTypeCreate),
 	})
-	fmt.Printf("repoPath: %+v\n", repoPath)
 	if err != nil {
 		return err
 	}
@@ -93,7 +86,11 @@ func (t *TaskService) HandleCreateDeployment(ctx context.Context, prepareContext
 		Force:                false,
 		ForceWithoutCache:    false,
 	})
+	if err != nil {
+		return err
+	}
 	fmt.Printf("buildImageResult: %+v\n", buildImageResult)
+
 	containerResult, err := t.AtomicUpdateContainer(prepareContextResult)
 	fmt.Printf("containerResult: %+v\n", containerResult)
 	if err != nil {

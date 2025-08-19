@@ -3,7 +3,6 @@ package controller
 import (
 	"bytes"
 	"context"
-	"log"
 	"io"
 	"net/http"
 
@@ -39,12 +38,10 @@ func NewDeployController(
 	notificationManager *notification.NotificationManager,
 ) *DeployController {
 	storage := storage.DeployStorage{DB: store.DB, Ctx: ctx}
-	docker_repo := docker.NewDockerService()
+	docker_repo := docker.NewDockerService()	
 	github_service := github_service.NewGithubConnectorService(store, ctx, l, &github_storage.GithubConnectorStorage{DB: store.DB, Ctx: ctx})
-	taskService := tasks.NewTaskService(&storage, l, docker_repo, github_service)
-	log.Println("Setting up create deployment queue")
+	taskService := tasks.NewTaskService(&storage, l, docker_repo, github_service, store)
 	taskService.SetupCreateDeploymentQueue()
-	log.Println("Starting create deployment queue consumers")
 	taskService.StartConsumers(ctx)
 
 	return &DeployController{
