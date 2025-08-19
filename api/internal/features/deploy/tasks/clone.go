@@ -11,6 +11,7 @@ import (
 type CloneConfig struct {
 	shared_types.PrepareContextResult
 	DeploymentType string
+	TaskContext    *TaskContext
 }
 
 func (t *TaskService) Clone(cloneConfig CloneConfig) (string, error) {

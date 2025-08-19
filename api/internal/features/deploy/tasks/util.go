@@ -29,43 +29,74 @@ func GetMapFromString(s string) map[string]string {
 		}
 	}
 	return result
-}			
+}
 
-func (s *TaskService) UpdateDeployment(deployment *shared_types.ApplicationDeployment) {
-	err := s.Storage.UpdateApplicationDeployment(deployment)
-	if err != nil {
-		s.Logger.Log(logger.Error, "Failed to update application deployment: "+err.Error(), "")
+type TaskContext struct {
+	service       *TaskService
+	applicationID uuid.UUID
+	deploymentID  uuid.UUID
+	statusID      uuid.UUID
+}
+
+func (s *TaskService) NewTaskContext(result shared_types.PrepareContextResult) *TaskContext {
+	return &TaskContext{
+		service:       s,
+		applicationID: result.Application.ID,
+		deploymentID:  result.ApplicationDeployment.ID,
+		statusID:      uuid.New(),
 	}
 }
 
-// updateStatus updates the application status
-func (s *TaskService) UpdateStatus(deploymentID uuid.UUID, status shared_types.Status, id uuid.UUID) {
+func (tc *TaskContext) UpdateDeployment(deployment *shared_types.ApplicationDeployment) {
+	err := tc.service.Storage.UpdateApplicationDeployment(deployment)
+	if err != nil {
+		tc.service.Logger.Log(logger.Error, "Failed to update application deployment: "+err.Error(), "")
+	}
+}
+
+func (tc *TaskContext) UpdateStatus(status shared_types.Status) {
 	appStatus := shared_types.ApplicationDeploymentStatus{
-		ID:                      id,
-		ApplicationDeploymentID: deploymentID,
+		ID:                      tc.statusID,
+		ApplicationDeploymentID: tc.deploymentID,
 		Status:                  status,
 		UpdatedAt:               time.Now(),
 	}
 
-	err := s.Storage.UpdateApplicationDeploymentStatus(&appStatus)
+	err := tc.service.Storage.UpdateApplicationDeploymentStatus(&appStatus)
 	if err != nil {
-		s.Logger.Log(logger.Error, "Failed to update application deployment status: "+err.Error(), "")
+		tc.service.Logger.Log(logger.Error, "Failed to update application deployment status: "+err.Error(), "")
 	}
 }
 
-// addLog adds a new log entry for the application
-func (s *TaskService) AddLog(applicationID uuid.UUID, logMessage string, deploymentID uuid.UUID) {
+func (tc *TaskContext) AddLog(logMessage string) {
 	appLog := shared_types.ApplicationLogs{
 		ID:                      uuid.New(),
-		ApplicationID:           applicationID,
+		ApplicationID:           tc.applicationID,
 		Log:                     logMessage,
 		CreatedAt:               time.Now(),
 		UpdatedAt:               time.Now(),
-		ApplicationDeploymentID: deploymentID,
+		ApplicationDeploymentID: tc.deploymentID,
 	}
 
-	err := s.Storage.AddApplicationLogs(&appLog)
+	err := tc.service.Storage.AddApplicationLogs(&appLog)
 	if err != nil {
-		s.Logger.Log(logger.Error, "Failed to add application log: "+err.Error(), "")
+		tc.service.Logger.Log(logger.Error, "Failed to add application log: "+err.Error(), "")
 	}
-}	
+}
+
+func (tc *TaskContext) LogAndUpdateStatus(message string, status shared_types.Status) {
+	tc.AddLog(message)
+	tc.UpdateStatus(status)
+}
+
+func (tc *TaskContext) GetApplicationID() uuid.UUID {
+	return tc.applicationID
+}
+
+func (tc *TaskContext) GetDeploymentID() uuid.UUID {
+	return tc.deploymentID
+}
+
+func (tc *TaskContext) GetStatusID() uuid.UUID {
+	return tc.statusID
+}

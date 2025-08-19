@@ -24,11 +24,13 @@ type BuildConfig struct {
 	ContextPath       string
 	Force             bool
 	ForceWithoutCache bool
+	TaskContext       *TaskContext
 }
 
 // buildImageFromDockerfile builds a Docker image from a Dockerfile using the provided DeployerConfig. It logs
 // the deployment status and image build output to the database, and returns the name of the built image.
 func (s *TaskService) BuildImage(b BuildConfig) (string, error) {
+	b.TaskContext.LogAndUpdateStatus("Starting image build", shared_types.Building)
 	// For monorepo setups, we need to consider the base path
 	buildContextPath := b.ContextPath
 	if b.Application.BasePath != "" && b.Application.BasePath != "/" {
@@ -36,13 +38,17 @@ func (s *TaskService) BuildImage(b BuildConfig) (string, error) {
 	}
 
 	if _, err := os.Stat(buildContextPath); os.IsNotExist(err) {
+		b.TaskContext.LogAndUpdateStatus("Build context path does not exist: "+buildContextPath, shared_types.Failed)
 		return "", fmt.Errorf("build context path does not exist: %s", buildContextPath)
 	}
 
+	b.TaskContext.AddLog("Creating build context archive...")
 	archive, err := s.createBuildContextArchive(buildContextPath)
 	if err != nil {
+		b.TaskContext.LogAndUpdateStatus("Failed to create build context archive: "+err.Error(), shared_types.Failed)
 		return "", err
 	}
+	b.TaskContext.AddLog("Build context archive created successfully")
 
 	dockerfile_path := "Dockerfile"
 	if b.Application.DockerfilePath != "" {
@@ -50,15 +56,21 @@ func (s *TaskService) BuildImage(b BuildConfig) (string, error) {
 	}
 
 	dockerfileFullPath := filepath.Join(buildContextPath, dockerfile_path)
+	b.TaskContext.AddLog("Validating Dockerfile path...")
 	if _, err := os.Stat(dockerfileFullPath); os.IsNotExist(err) {
-		return "", fmt.Errorf("Dockerfile not found at path: %s", dockerfileFullPath)
+		b.TaskContext.LogAndUpdateStatus("Dockerfile not found at path: "+dockerfileFullPath, shared_types.Failed)
+		return "", fmt.Errorf("dockerfile not found at path: %v", err)
 	}
+	b.TaskContext.AddLog("Dockerfile validation successful")
 
+	b.TaskContext.AddLog("Starting Docker image build...")
 	buildOptions := s.createBuildOptions(b, dockerfile_path)
 	resp, err := s.DockerRepo.BuildImage(buildOptions, archive)
 	if err != nil {
+		b.TaskContext.LogAndUpdateStatus("Failed to build image: "+err.Error(), shared_types.Failed)
 		return "", err
 	}
+	b.TaskContext.AddLog("Docker build started successfully")
 	defer resp.Body.Close()
 
 	logReader := &LogReader{
@@ -66,12 +78,18 @@ func (s *TaskService) BuildImage(b BuildConfig) (string, error) {
 		ApplicationID:     b.Application.ID,
 		DeployService:     s,
 		deployment_config: &b.ApplicationDeployment,
+		TaskContext:       b.TaskContext,
 	}
 
+	b.TaskContext.AddLog("Processing build output...")
 	err = s.processBuildOutput(logReader)
 	if err != nil {
+		b.TaskContext.LogAndUpdateStatus("Failed to process build output: "+err.Error(), shared_types.Failed)
 		return "", err
 	}
+	b.TaskContext.AddLog("Build output processing completed")
+
+	b.TaskContext.LogAndUpdateStatus("Image built successfully", shared_types.Deploying)
 
 	return b.Application.Name, nil
 }
@@ -143,7 +161,9 @@ func (s *TaskService) processBuildOutput(logReader *LogReader) error {
 	termFd, isTerm := term.GetFdInfo(os.Stdout)
 	err := jsonmessage.DisplayJSONMessagesStream(logReader, os.Stdout, termFd, isTerm, nil)
 	if err != nil {
-		s.Logger.Log(logger.Error, err.Error(), logReader.deployment_config.ID.String())
+		errorMsg := fmt.Sprintf("Build output processing failed: %v", err)
+		s.Logger.Log(logger.Error, errorMsg, logReader.deployment_config.ID.String())
+		logReader.TaskContext.AddLog(errorMsg)
 		return err
 	}
 	return nil
@@ -156,6 +176,7 @@ type LogReader struct {
 	DeployService     *TaskService
 	buffer            []byte
 	deployment_config *shared_types.ApplicationDeployment
+	TaskContext       *TaskContext
 }
 
 // Read implements the io.Reader interface for LogReader. It reads from the underlying Reader and
@@ -193,13 +214,16 @@ func (r *LogReader) Read(p []byte) (n int, err error) {
 func (r *LogReader) processJSONMessage(jsonMsg jsonmessage.JSONMessage) {
 	if jsonMsg.Stream != "" {
 		r.DeployService.Logger.Log(logger.Info, "Build: "+jsonMsg.Stream, r.deployment_config.ID.String())
+		r.TaskContext.AddLog("Build: " + jsonMsg.Stream)
 	} else if jsonMsg.Status != "" {
 		status := jsonMsg.Status
 		if jsonMsg.Progress != nil {
 			status += " " + jsonMsg.Progress.String()
 		}
 		r.DeployService.Logger.Log(logger.Info, "Build: "+status, r.deployment_config.ID.String())
+		r.TaskContext.AddLog("Build: " + status)
 	} else if jsonMsg.Error != nil {
 		r.DeployService.Logger.Log(logger.Error, "Build error: "+jsonMsg.Error.Message, r.deployment_config.ID.String())
+		r.TaskContext.AddLog("Build error: " + jsonMsg.Error.Message)
 	}
 }

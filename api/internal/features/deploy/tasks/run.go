@@ -16,11 +16,11 @@ import (
 )
 
 type AtomicUpdateContainerResult struct {
-	ContainerID   string
-	ContainerName string
-	ContainerImage string
+	ContainerID     string
+	ContainerName   string
+	ContainerImage  string
 	ContainerStatus string
-	UpdatedAt time.Time
+	UpdatedAt       time.Time
 }
 
 func (s *TaskService) formatLog(
@@ -162,11 +162,16 @@ func (s *TaskService) createContainerConfigs(r shared_types.PrepareContextResult
 		env_vars,
 		r.Application.ID.String(),
 	)
+
+	s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, "Finding available port...")
 	availablePort, err := s.getAvailablePort()
 	if err != nil {
-		s.Logger.Log(logger.Error, types.ErrFailedToGetAvailablePort.Error(), err.Error())
+		errorMsg := fmt.Sprintf("Failed to get available port: %v", err)
+		s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, errorMsg)
 		return container.Config{}, container.HostConfig{}, network.NetworkingConfig{}, ""
 	}
+	s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, "Found available port: %s", availablePort)
+
 	host_config := s.prepareHostConfig(port, availablePort)
 	network_config := s.prepareNetworkConfig()
 
@@ -182,53 +187,88 @@ func (s *TaskService) AtomicUpdateContainer(r shared_types.PrepareContextResult)
 	s.Logger.Log(logger.Info, types.LogUpdatingContainer, r.Application.Name)
 	s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, types.LogPreparingToUpdateContainer, r.Application.Name)
 
+	s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, "Checking for running containers...")
 	currentContainers, err := s.getRunningContainers(r)
 	if err != nil {
 		return AtomicUpdateContainerResult{}, err
 	}
 
-	container_config, host_config, network_config, _ := s.createContainerConfigs(r)
+	s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, "Preparing container configurations...")
+	container_config, host_config, network_config, availablePort := s.createContainerConfigs(r)
+	if availablePort == "" {
+		s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, "Failed to get available port")
+		return AtomicUpdateContainerResult{}, types.ErrFailedToGetAvailablePort
+	}
+	s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, "Container configurations prepared successfully")
 
 	s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, types.LogCreatingNewContainer)
 	resp, err := s.DockerRepo.CreateContainer(container_config, host_config, network_config, "")
 	if err != nil {
-		fmt.Printf("Failed to create container: %v\n", err)
+		errorMsg := fmt.Sprintf("Failed to create container: %v", err)
+		s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, errorMsg)
 		return AtomicUpdateContainerResult{}, types.ErrFailedToCreateContainer
 	}
 	s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, types.LogNewContainerCreated+"%s", resp.ID)
 
-	for _, ctr := range currentContainers {
-		s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, types.LogStoppingOldContainer+"%s", ctr.ID)
-		err = s.DockerRepo.StopContainer(ctr.ID, container.StopOptions{Timeout: intPtr(10)})
-		if err != nil {
-			s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, types.LogFailedToStopOldContainer, err.Error())
+	if len(currentContainers) > 0 {
+		s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, "Stopping %d existing containers...", len(currentContainers))
+		for _, ctr := range currentContainers {
+			s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, types.LogStoppingOldContainer+"%s", ctr.ID)
+			err = s.DockerRepo.StopContainer(ctr.ID, container.StopOptions{Timeout: intPtr(10)})
+			if err != nil {
+				s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, types.LogFailedToStopOldContainer, err.Error())
+			} else {
+				s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, "Successfully stopped container: %s", ctr.ID)
+			}
 		}
+		s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, "All existing containers stopped")
+	} else {
+		s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, "No existing containers found to stop")
 	}
 
 	s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, types.LogStartingNewContainer)
 	err = s.DockerRepo.StartContainer(resp.ID, container.StartOptions{})
 	if err != nil {
-		fmt.Printf("Failed to start container: %v\n", err)
+		errorMsg := fmt.Sprintf("Failed to start container: %v", err)
+		s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, errorMsg)
+		s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, "Cleaning up failed container...")
 		s.DockerRepo.RemoveContainer(resp.ID, container.RemoveOptions{Force: true})
 		return AtomicUpdateContainerResult{}, types.ErrFailedToStartNewContainer
 	}
 	s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, types.LogNewContainerStartedSuccessfully)
 
+	s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, "Waiting for container to stabilize...")
 	time.Sleep(time.Second * 5)
 
+	s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, "Verifying container health...")
 	containerInfo, err := s.DockerRepo.GetContainerById(resp.ID)
-	if err != nil || containerInfo.State.Status != "running" {
+	if err != nil {
+		errorMsg := fmt.Sprintf("Failed to get container info: %v", err)
+		s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, errorMsg)
+		s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, "Cleaning up failed container...")
 		s.DockerRepo.StopContainer(resp.ID, container.StopOptions{})
 		s.DockerRepo.RemoveContainer(resp.ID, container.RemoveOptions{Force: true})
 		return AtomicUpdateContainerResult{}, types.ErrFailedToUpdateContainer
 	}
 
+	if containerInfo.State.Status != "running" {
+		errorMsg := fmt.Sprintf("Container is not running, status: %s", containerInfo.State.Status)
+		s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, errorMsg)
+		s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, "Cleaning up failed container...")
+		s.DockerRepo.StopContainer(resp.ID, container.StopOptions{})
+		s.DockerRepo.RemoveContainer(resp.ID, container.RemoveOptions{Force: true})
+		return AtomicUpdateContainerResult{}, types.ErrFailedToUpdateContainer
+	}
+
+	s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, "Container health verification successful")
+	s.formatLog(r.Application.ID, r.ApplicationDeployment.ID, "Container update completed successfully")
+
 	return AtomicUpdateContainerResult{
-		ContainerID:   resp.ID,
-		ContainerName: containerInfo.Name,
-		ContainerImage: containerInfo.Image,
+		ContainerID:     resp.ID,
+		ContainerName:   containerInfo.Name,
+		ContainerImage:  containerInfo.Image,
 		ContainerStatus: containerInfo.State.Status,
-		UpdatedAt: time.Now(),
+		UpdatedAt:       time.Now(),
 	}, nil
 }
 
