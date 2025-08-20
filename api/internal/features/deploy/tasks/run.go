@@ -20,6 +20,7 @@ type AtomicUpdateContainerResult struct {
 	ContainerImage  string
 	ContainerStatus string
 	UpdatedAt       time.Time
+	AvailablePort   string
 }
 
 func (s *TaskService) formatLog(
@@ -250,6 +251,7 @@ func (s *TaskService) AtomicUpdateContainer(r shared_types.TaskPayload, taskCont
 		ContainerImage:  containerInfo.Image,
 		ContainerStatus: containerInfo.State.Status,
 		UpdatedAt:       time.Now(),
+		AvailablePort:   availablePort,
 	}, nil
 }
 

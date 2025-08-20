@@ -8,6 +8,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
 	"github.com/google/uuid"
+	"github.com/raghavyuva/caddygo"
 	"github.com/raghavyuva/nixopus-api/internal/features/deploy/types"
 	"github.com/raghavyuva/nixopus-api/internal/features/logger"
 )
@@ -20,6 +21,8 @@ func (s *TaskService) DeleteDeployment(deployment *types.DeleteDeploymentRequest
 	if err != nil {
 		return fmt.Errorf("failed to get application details: %w", err)
 	}
+
+	domain := application.Domain
 
 	deployments, err := s.Storage.GetApplicationDeployments(application.ID)
 	if err != nil {
@@ -54,6 +57,14 @@ func (s *TaskService) DeleteDeployment(deployment *types.DeleteDeploymentRequest
 	if err != nil {
 		s.Logger.Log(logger.Error, "Failed to remove repository", err.Error())
 	}
+
+	client := caddygo.NewClient("http://localhost:2019")
+	err = client.DeleteDomain(domain)
+	if err != nil {
+		s.Logger.Log(logger.Error, "Failed to remove domain", err.Error())
+	}
+	client.Reload()
+	
 
 	return s.Storage.DeleteDeployment(deployment, userID)
 }

@@ -3,16 +3,17 @@ package tasks
 import (
 	"context"
 	"fmt"
-
+	"strconv"
 	"github.com/google/uuid"
+	"github.com/raghavyuva/caddygo"
 	"github.com/raghavyuva/nixopus-api/internal/features/deploy/types"
 	shared_types "github.com/raghavyuva/nixopus-api/internal/types"
 )
 
 func (t *TaskService) CreateDeploymentTask(deployment *types.CreateDeploymentRequest, userID uuid.UUID, organizationID uuid.UUID) (shared_types.Application, error) {
 	contextTask := ContextTask{
-		TaskService: t,
-		ContextConfig: deployment,
+		TaskService:    t,
+		ContextConfig:  deployment,
 		UserId:         userID,
 		OrganizationId: organizationID,
 	}
@@ -71,6 +72,19 @@ func (t *TaskService) HandleCreateDockerfileDeployment(ctx context.Context, Task
 	taskCtx.AddLog("Container updated successfully for application " + TaskPayload.Application.Name + " with container id " + containerResult.ContainerID)
 	taskCtx.LogAndUpdateStatus("Deployment completed successfully", shared_types.Deployed)
 
+	client := caddygo.NewClient("http://localhost:2019")
+	port, err := strconv.Atoi(containerResult.AvailablePort)
+	if err != nil {
+		taskCtx.LogAndUpdateStatus("Failed to convert port to int: "+err.Error(), shared_types.Failed)
+		return err
+	}
+	err = client.AddDomainWithAutoTLS(TaskPayload.Application.Domain, TaskPayload.Application.Domain, port, caddygo.DomainOptions{})
+	if err != nil {
+		fmt.Println("Failed to add domain: ", err)
+		taskCtx.LogAndUpdateStatus("Failed to add domain: "+err.Error(), shared_types.Failed)
+		return err
+	}
+	client.Reload()
 	return nil
 }
 
