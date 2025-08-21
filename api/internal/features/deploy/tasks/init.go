@@ -84,7 +84,18 @@ func (t *TaskService) BuildPack(ctx context.Context, d shared_types.TaskPayload)
 	var err error
 	switch d.Application.BuildPack {
 	case shared_types.DockerFile:
+		err = t.PrerunCommands(d)
+		if err != nil {
+			return err
+		}
 		err = t.HandleCreateDockerfileDeployment(ctx, d)
+		if err != nil {
+			return err
+		}
+		err = t.PostRunCommands(d)
+		if err != nil {
+			return err
+		}
 	case shared_types.DockerCompose:
 		err = t.HandleCreateDockerComposeDeployment(ctx, d)
 	case shared_types.Static:
